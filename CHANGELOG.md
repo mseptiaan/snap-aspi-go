@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2024-07-20
+
+### Added
+- Added BCA-specific client implementation
+- Added BCA-specific request and response types
+- Added BCA-specific endpoints and services
+- Added BCA integration examples
+- Changed AdditionalInfo from map[string]any to struct for consistent structure
+- Added bank-specific presets in separate file for better organization
+
+### Changed
+- Updated README with BCA-specific integration examples
+- Improved error handling for bank-specific responses
+- Enhanced bank preset configurations with more detailed endpoints
+
 ## [1.1.0] - 2024-07-15
 
 ### Added
