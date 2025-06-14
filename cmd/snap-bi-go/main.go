@@ -126,12 +126,9 @@ func main() {
 	go func() {
 		ticker := time.NewTicker(10 * time.Minute)
 		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				accessTokenManager.CleanupCache()
-				rateLimiter.Cleanup()
-			}
+		for range ticker.C {
+			accessTokenManager.CleanupCache()
+			rateLimiter.Cleanup()
 		}
 	}()
 
