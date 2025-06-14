@@ -1,4 +1,68 @@
-node_modules/
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go build
+/bin/
+/dist/
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.cover
+*.coverprofile
+
+# Test results
+test-results/
+
+# Keys and certificates (for security)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Environment files
 .env
-bin/*
-keys/*
+.env.local
+.env.*.local
+
+# Temporary files
+tmp/
+temp/

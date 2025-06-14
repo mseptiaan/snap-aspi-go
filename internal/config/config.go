@@ -2,19 +2,14 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"strings"
 	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
 // Config represents the application configuration
 type Config struct {
 	App    AppConfig    `yaml:"app"`
-	Server ServerConfig `yaml:"server"`
-	Logger LoggerConfig `yaml:"logging"`
 	ASPI   ASPIConfig   `yaml:"aspi"`
+	Logger LoggerConfig `yaml:"logging"`
 }
 
 // AppConfig represents application-level configuration
@@ -22,14 +17,6 @@ type AppConfig struct {
 	Name        string `yaml:"name"`
 	Version     string `yaml:"version"`
 	Environment string `yaml:"environment"`
-}
-
-// ServerConfig represents HTTP server configuration
-type ServerConfig struct {
-	Host         string        `yaml:"host"`
-	Port         string        `yaml:"port"`
-	ReadTimeout  time.Duration `yaml:"read_timeout"`
-	WriteTimeout time.Duration `yaml:"write_timeout"`
 }
 
 // LoggerConfig represents logging configuration
@@ -69,70 +56,6 @@ type RetryConfig struct {
 	BackoffDuration time.Duration `yaml:"backoff_duration"`
 }
 
-// Load loads configuration from YAML file with environment variable substitution
-func Load(configPath string) (*Config, error) {
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %w", err)
-	}
-
-	// Substitute environment variables
-	configData := expandEnvVars(string(data))
-
-	var config Config
-	if err := yaml.Unmarshal([]byte(configData), &config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
-	}
-
-	// Validate required fields
-	if err := config.validate(); err != nil {
-		return nil, fmt.Errorf("config validation failed: %w", err)
-	}
-
-	return &config, nil
-}
-
-// expandEnvVars replaces ${VAR_NAME:default_value} patterns with environment variables
-func expandEnvVars(data string) string {
-	// Simple environment variable expansion for ${VAR:default} format
-	result := data
-	start := 0
-	for {
-		begin := strings.Index(result[start:], "${")
-		if begin == -1 {
-			break
-		}
-		begin += start
-
-		end := strings.Index(result[begin:], "}")
-		if end == -1 {
-			break
-		}
-		end += begin
-
-		// Extract variable specification: VAR_NAME:default_value
-		varSpec := result[begin+2 : end]
-		parts := strings.SplitN(varSpec, ":", 2)
-		varName := parts[0]
-		defaultValue := ""
-		if len(parts) > 1 {
-			defaultValue = parts[1]
-		}
-
-		// Get environment variable value or use default
-		envValue := os.Getenv(varName)
-		if envValue == "" {
-			envValue = defaultValue
-		}
-
-		// Replace the variable placeholder
-		result = result[:begin] + envValue + result[end+1:]
-		start = begin + len(envValue)
-	}
-
-	return result
-}
-
 // validate validates the configuration
 func (c *Config) validate() error {
 	if c.ASPI.ClientID == "" {
@@ -145,11 +68,6 @@ func (c *Config) validate() error {
 		return fmt.Errorf("ASPI base URL is required")
 	}
 	return nil
-}
-
-// GetServerAddress returns the full server address
-func (c *Config) GetServerAddress() string {
-	return c.Server.Host + ":" + c.Server.Port
 }
 
 // IsDevelopment returns true if running in development environment

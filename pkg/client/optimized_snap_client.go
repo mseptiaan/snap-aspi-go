@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -33,7 +34,7 @@ type OptimizedSnapClient struct {
 
 // NewOptimizedSnapClient creates a new optimized ASPI HTTP client
 func NewOptimizedSnapClient(cfg *config.Config, logger logging.Logger) contracts.HTTPClient {
-	httpClient := CreateOptimizedHTTPClient(
+	httpClient := createOptimizedHTTPClient(
 		cfg.ASPI.Timeouts.ConnectTimeout,
 		cfg.ASPI.Timeouts.RequestTimeout,
 	)
@@ -56,6 +57,38 @@ func NewOptimizedSnapClient(cfg *config.Config, logger logging.Logger) contracts
 	}
 
 	return client
+}
+
+// createOptimizedHTTPClient creates an HTTP client with connection pooling and optimizations
+func createOptimizedHTTPClient(connectTimeout, requestTimeout time.Duration) *http.Client {
+	// Create custom transport with connection pooling
+	transport := &http.Transport{
+		// Connection pooling settings
+		MaxIdleConns:        100,              // Maximum idle connections across all hosts
+		MaxIdleConnsPerHost: 10,               // Maximum idle connections per host
+		MaxConnsPerHost:     50,               // Maximum connections per host
+		IdleConnTimeout:     90 * time.Second, // How long idle connections are kept
+
+		// Timeouts
+		DialContext: (&net.Dialer{
+			Timeout:   connectTimeout,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+
+		// Enable HTTP/2
+		ForceAttemptHTTP2: true,
+
+		// Disable compression for better performance with JSON
+		DisableCompression: false,
+	}
+
+	return &http.Client{
+		Transport: transport,
+		Timeout:   requestTimeout,
+	}
 }
 
 // Get performs a GET request
@@ -92,7 +125,7 @@ func (c *OptimizedSnapClient) Delete(ctx context.Context, url string, headers ma
 func (c *OptimizedSnapClient) WithTimeout(timeout time.Duration) contracts.HTTPClient {
 	newClient := *c
 	newClient.timeout = timeout
-	newClient.httpClient = CreateOptimizedHTTPClient(timeout, timeout)
+	newClient.httpClient = createOptimizedHTTPClient(timeout, timeout)
 	return &newClient
 }
 

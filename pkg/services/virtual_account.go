@@ -17,7 +17,6 @@ import (
 )
 
 // VirtualAccountService implements the VirtualAccount business logic
-// Converted from PHP VirtualAccount service class
 type VirtualAccountService struct {
 	httpClient  contracts.HTTPClient
 	authManager *auth.AccessTokenManager
@@ -72,6 +71,74 @@ func NewVirtualAccountService(
 	}, nil
 }
 
+// NewVirtualAccountServiceWithEndpoints creates a new VirtualAccount service with custom endpoints
+func NewVirtualAccountServiceWithEndpoints(
+	httpClient contracts.HTTPClient,
+	authManager *auth.AccessTokenManager,
+	cfg *config.Config,
+	logger logging.Logger,
+	customEndpoints map[string]string,
+) (*VirtualAccountService, error) {
+	// Create symmetric signer for API signatures
+	symSigner := signature.NewSymmetricSigner(cfg.ASPI.ClientSecret)
+
+	// Use custom endpoints if provided, otherwise use defaults
+	endpoints := getVAEndpoints(customEndpoints)
+	methods := getVAMethods()
+
+	return &VirtualAccountService{
+		httpClient:  httpClient,
+		authManager: authManager,
+		symSigner:   symSigner,
+		config:      cfg,
+		logger:      logger,
+		endpoints:   endpoints,
+		methods:     methods,
+	}, nil
+}
+
+// getVAEndpoints returns VA endpoints (custom or default)
+func getVAEndpoints(customEndpoints map[string]string) map[string]string {
+	// Default endpoints
+	defaultEndpoints := map[string]string{
+		"inquiry":       "/api/v1.0/transfer-va/inquiry",
+		"inquiry-va":    "/api/v1.0/transfer-va/inquiry-va",
+		"create-va":     "/api/v1.0/transfer-va/create-va",
+		"update-va":     "/api/v1.0/transfer-va/update-va",
+		"delete-va":     "/api/v1.0/transfer-va/delete-va",
+		"payment":       "/api/v1.0/transfer-va/payment",
+		"status":        "/api/v1.0/transfer-va/status",
+		"report":        "/api/v1.0/transfer-va/report",
+		"update-status": "/api/v1.0/transfer-va/update-status",
+	}
+
+	// If custom endpoints provided, merge them
+	if customEndpoints != nil {
+		for key, endpoint := range customEndpoints {
+			if endpoint != "" {
+				defaultEndpoints[key] = endpoint
+			}
+		}
+	}
+
+	return defaultEndpoints
+}
+
+// getVAMethods returns HTTP methods for VA endpoints
+func getVAMethods() map[string]string {
+	return map[string]string{
+		"inquiry":       "POST",
+		"inquiry-va":    "POST",
+		"create-va":     "POST",
+		"update-va":     "PUT",
+		"delete-va":     "DELETE",
+		"payment":       "POST",
+		"status":        "POST",
+		"report":        "POST",
+		"update-status": "PUT",
+	}
+}
+
 // CreateVA creates a new Virtual Account
 func (v *VirtualAccountService) CreateVA(ctx context.Context, payload *types.CreateVAPayload) (map[string]any, error) {
 	return v.makeRequest(ctx, "create-va", payload)
@@ -124,7 +191,6 @@ func (v *VirtualAccountService) UpdateStatus(
 }
 
 // makeRequest handles the HTTP request for ASPI API calls
-// Equivalent to PHP VirtualAccount::send() method
 func (v *VirtualAccountService) makeRequest(ctx context.Context, endpoint string, payload any) (map[string]any, error) {
 	// Validate endpoint
 	path, exists := v.endpoints[endpoint]
@@ -180,7 +246,7 @@ func (v *VirtualAccountService) makeRequest(ctx context.Context, endpoint string
 		return nil, fmt.Errorf("failed to generate signature: %w", err)
 	}
 
-	// Build request headers (equivalent to PHP headers() method)
+	// Build request headers
 	requestHeaders := map[string]string{
 		"Content-Type":           "application/json",
 		"X-Client-Key":           v.config.ASPI.ClientID,

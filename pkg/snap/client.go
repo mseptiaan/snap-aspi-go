@@ -1,7 +1,6 @@
 package snap
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/mseptiaan/snap-aspi-go/internal/auth"

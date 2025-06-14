@@ -9,13 +9,14 @@ This guide will help you integrate the SNAP ASPI Go SDK into your application fo
 3. [Configuration](#configuration)
 4. [Basic Usage](#basic-usage)
 5. [Virtual Account Operations](#virtual-account-operations)
-6. [MPM (Merchant Payment Management)](#mpm-merchant-payment-management)
+6. [MPM Operations](#mpm-operations)
 7. [QR Code Operations](#qr-code-operations)
 8. [Authentication](#authentication)
-9. [Error Handling](#error-handling)
-10. [Best Practices](#best-practices)
-11. [Testing](#testing)
-12. [Production Deployment](#production-deployment)
+9. [Multi-Bank Support](#multi-bank-support)
+10. [Error Handling](#error-handling)
+11. [Best Practices](#best-practices)
+12. [Testing](#testing)
+13. [Production Deployment](#production-deployment)
 
 ## 🔧 Prerequisites
 
@@ -220,7 +221,7 @@ func processPayment(client *snap.Client) {
 }
 ```
 
-## 🏪 MPM (Merchant Payment Management)
+## 🏪 MPM Operations
 
 ### Transfer Credit
 
@@ -347,28 +348,48 @@ func getB2BToken(client *snap.Client) {
 }
 ```
 
-### Get B2B2C Token
+## 🏦 Multi-Bank Support
+
+### Using Bank Presets
 
 ```go
-func getB2B2CToken(client *snap.Client) {
-    ctx := context.Background()
-    
-    req := auth.CustomerTokenRequest{
-        AuthCode:       "auth-code-from-customer",
-        RefreshToken:   "refresh-token",
-        AdditionalInfo: map[string]interface{}{
-            "customerId": "CUST001",
-        },
-    }
-    
-    token, err := client.Auth().GetB2B2CToken(ctx, req)
-    if err != nil {
-        log.Printf("Error getting B2B2C token: %v", err)
-        return
-    }
-    
-    fmt.Printf("Customer Token: %s\n", token.AccessToken)
+// BCA Bank
+client, err := snap.NewClientForBank(snap.Config{
+    BaseURL:        "https://sandbox.aspi-indonesia.or.id",
+    ClientID:       "bca-client-id",
+    ClientSecret:   "bca-client-secret",
+    PrivateKeyPath: "path/to/private_key.pem",
+}, "BCA")
+
+// BNI Bank
+client, err := snap.NewClientForBank(config, "BNI")
+
+// BRI Bank
+client, err := snap.NewClientForBank(config, "BRI")
+```
+
+### Custom Endpoints
+
+```go
+customEndpoints := &snap.CustomEndpoints{
+    VirtualAccount: &snap.VirtualAccountEndpoints{
+        CreateVA:  "/api/v2.0/custom-bank/va/create",
+        InquiryVA: "/api/v2.0/custom-bank/va/inquiry",
+        Payment:   "/api/v2.0/custom-bank/va/payment",
+    },
+    MPM: &snap.MPMEndpoints{
+        Transfer:   "/api/v2.0/custom-bank/mpm/transfer",
+        GenerateQR: "/api/v2.0/custom-bank/qr/generate",
+    },
 }
+
+client, err := snap.NewClient(snap.Config{
+    BaseURL:         "https://custom-bank-api.example.com",
+    ClientID:        "your-client-id",
+    ClientSecret:    "your-client-secret",
+    PrivateKeyPath:  "path/to/private_key.pem",
+    CustomEndpoints: customEndpoints,
+})
 ```
 
 ## ⚠️ Error Handling
@@ -458,22 +479,13 @@ type Config struct {
     PrivateKeyPath string `env:"ASPI_PRIVATE_KEY_PATH"`
     Environment    string `env:"ASPI_ENVIRONMENT" envDefault:"sandbox"`
 }
-
-// Load from environment
-func loadConfig() (*Config, error) {
-    cfg := &Config{}
-    if err := env.Parse(cfg); err != nil {
-        return nil, err
-    }
-    return cfg, nil
-}
 ```
 
-### 2. Connection Pooling
+### 2. Connection Management
 
 ```go
 // The SDK automatically handles connection pooling
-// But you can create a singleton client
+// Create a singleton client for your application
 var (
     snapClient *snap.Client
     once       sync.Once
@@ -509,25 +521,6 @@ func logOperation(operation string, payload interface{}, result interface{}, err
 }
 ```
 
-### 4. Graceful Shutdown
-
-```go
-func gracefulShutdown(client *snap.Client) {
-    // The SDK handles cleanup automatically
-    // But you can implement graceful shutdown for your app
-    
-    c := make(chan os.Signal, 1)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    
-    <-c
-    log.Println("Shutting down gracefully...")
-    
-    // Cancel ongoing operations
-    // Close resources
-    // etc.
-}
-```
-
 ## 🧪 Testing
 
 ### Unit Testing
@@ -557,24 +550,6 @@ func TestVirtualAccountCreation(t *testing.T) {
     assert.NoError(t, err)
     assert.NotNil(t, result)
     // Add more specific assertions based on expected response
-}
-```
-
-### Integration Testing
-
-```go
-func TestIntegration(t *testing.T) {
-    if testing.Short() {
-        t.Skip("Skipping integration test")
-    }
-    
-    // Use real sandbox credentials
-    client := setupRealClient(t)
-    
-    // Test full flow
-    testVirtualAccountFlow(t, client)
-    testMPMFlow(t, client)
-    testQRFlow(t, client)
 }
 ```
 
@@ -633,30 +608,8 @@ func healthCheck(client *snap.Client) error {
 
 ## 📞 Support and Resources
 
-- **Documentation**: [ASPI API Documentation](https://aspi-indonesia.or.id/docs)
 - **SDK Repository**: [GitHub Repository](https://github.com/mseptiaan/snap-aspi-go)
 - **Issues**: Report issues on GitHub
-- **Examples**: Check the `examples/` directory for more use cases
-
-## 🔄 Migration from HTTP Server
-
-If you're migrating from the HTTP server version:
-
-1. **Remove HTTP dependencies**: No need for Gin, HTTP handlers, etc.
-2. **Direct service calls**: Use SDK methods directly instead of HTTP endpoints
-3. **Configuration changes**: Use SDK config instead of YAML config files
-4. **Error handling**: Handle errors directly instead of HTTP status codes
-
-### Before (HTTP Server)
-```go
-// HTTP request to create VA
-resp, err := http.Post("/api/v1/virtual-account/create", payload)
-```
-
-### After (SDK)
-```go
-// Direct SDK call
-result, err := client.VirtualAccount().CreateVA(ctx, payload)
-```
+- **Documentation**: This integration guide and README
 
 This integration guide provides everything you need to successfully integrate the SNAP ASPI Go SDK into your application. Start with the basic examples and gradually implement more complex features as needed.

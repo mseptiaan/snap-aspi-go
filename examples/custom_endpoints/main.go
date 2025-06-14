@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/mseptiaan/snap-aspi-go/pkg/snap"
 	"github.com/mseptiaan/snap-aspi-go/pkg/types"
@@ -24,10 +25,6 @@ func main() {
 	fmt.Println("\n3. Mixing Bank Preset with Custom Overrides")
 	demonstrateMixedConfiguration()
 
-	// Example 4: Different banks comparison
-	fmt.Println("\n4. Different Banks Comparison")
-	demonstrateDifferentBanks()
-
 	fmt.Println("\n=== Custom Endpoints Examples Complete ===")
 }
 
@@ -35,11 +32,11 @@ func main() {
 func demonstrateBankPreset() {
 	// Using BCA predefined configuration
 	client, err := snap.NewClientForBank(snap.Config{
-		BaseURL:        "https://sandbox.aspi-indonesia.or.id",
-		ClientID:       "bca-client-id",
-		ClientSecret:   "bca-client-secret",
-		PrivateKeyPath: "../../keys/private_key.pem",
-		PublicKeyPath:  "../../keys/public_key.pem",
+		BaseURL:        getEnvOrDefault("ASPI_BASE_URL", "https://sandbox.aspi-indonesia.or.id"),
+		ClientID:       getEnvOrDefault("BCA_CLIENT_ID", "bca-client-id"),
+		ClientSecret:   getEnvOrDefault("BCA_CLIENT_SECRET", "bca-client-secret"),
+		PrivateKeyPath: getEnvOrDefault("ASPI_PRIVATE_KEY_PATH", "keys/private_key.pem"),
+		PublicKeyPath:  getEnvOrDefault("ASPI_PUBLIC_KEY_PATH", "keys/public_key.pem"),
 		Environment:    "sandbox",
 		LogLevel:       "info",
 	}, "BCA") // Bank code for BCA
@@ -109,10 +106,10 @@ func demonstrateCustomEndpoints() {
 
 	client, err := snap.NewClient(snap.Config{
 		BaseURL:         "https://custom-bank-api.example.com",
-		ClientID:        "custom-client-id",
-		ClientSecret:    "custom-client-secret",
-		PrivateKeyPath:  "../../keys/private_key.pem",
-		PublicKeyPath:   "../../keys/public_key.pem",
+		ClientID:        getEnvOrDefault("CUSTOM_CLIENT_ID", "custom-client-id"),
+		ClientSecret:    getEnvOrDefault("CUSTOM_CLIENT_SECRET", "custom-client-secret"),
+		PrivateKeyPath:  getEnvOrDefault("ASPI_PRIVATE_KEY_PATH", "keys/private_key.pem"),
+		PublicKeyPath:   getEnvOrDefault("ASPI_PUBLIC_KEY_PATH", "keys/public_key.pem"),
 		Environment:     "sandbox",
 		LogLevel:        "info",
 		CustomEndpoints: customEndpoints,
@@ -162,11 +159,11 @@ func demonstrateMixedConfiguration() {
 	}
 
 	client, err := snap.NewClientForBank(snap.Config{
-		BaseURL:         "https://sandbox.aspi-indonesia.or.id",
-		ClientID:        "bni-client-id",
-		ClientSecret:    "bni-client-secret",
-		PrivateKeyPath:  "../../keys/private_key.pem",
-		PublicKeyPath:   "../../keys/public_key.pem",
+		BaseURL:         getEnvOrDefault("ASPI_BASE_URL", "https://sandbox.aspi-indonesia.or.id"),
+		ClientID:        getEnvOrDefault("BNI_CLIENT_ID", "bni-client-id"),
+		ClientSecret:    getEnvOrDefault("BNI_CLIENT_SECRET", "bni-client-secret"),
+		PrivateKeyPath:  getEnvOrDefault("ASPI_PRIVATE_KEY_PATH", "keys/private_key.pem"),
+		PublicKeyPath:   getEnvOrDefault("ASPI_PUBLIC_KEY_PATH", "keys/public_key.pem"),
 		Environment:     "sandbox",
 		LogLevel:        "info",
 		CustomEndpoints: customEndpoints, // This will be merged with BNI presets
@@ -204,98 +201,9 @@ func demonstrateMixedConfiguration() {
 	fmt.Printf("Mixed BNI Client Configuration: %+v\n", client.GetConfig().CustomEndpoints)
 }
 
-// demonstrateDifferentBanks shows how different banks have different endpoints
-func demonstrateDifferentBanks() {
-	banks := []string{"BCA", "BNI", "BRI", "MANDIRI", "CIMB", "PERMATA"}
-	
-	bankPresets := &snap.BankPresets{}
-
-	fmt.Println("Comparing endpoint configurations for different banks:")
-	
-	for _, bankCode := range banks {
-		endpoints := bankPresets.GetBankConfig(bankCode)
-		if endpoints != nil {
-			fmt.Printf("\n%s Bank Endpoints:\n", bankCode)
-			fmt.Printf("  B2B Token: %s\n", endpoints.B2BToken)
-			if endpoints.VirtualAccount != nil {
-				fmt.Printf("  VA Create: %s\n", endpoints.VirtualAccount.CreateVA)
-				fmt.Printf("  VA Inquiry: %s\n", endpoints.VirtualAccount.InquiryVA)
-			}
-			if endpoints.MPM != nil {
-				fmt.Printf("  MPM Transfer: %s\n", endpoints.MPM.Transfer)
-				fmt.Printf("  MPM QR Generate: %s\n", endpoints.MPM.GenerateQR)
-			}
-		}
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-
-	// Example: Create clients for different banks
-	fmt.Println("\nCreating clients for different banks:")
-	
-	for _, bankCode := range banks[:3] { // Test first 3 banks
-		fmt.Printf("\nTesting %s client...\n", bankCode)
-		
-		client, err := snap.NewClientForBank(snap.Config{
-			BaseURL:        "https://sandbox.aspi-indonesia.or.id",
-			ClientID:       fmt.Sprintf("%s-client-id", bankCode),
-			ClientSecret:   fmt.Sprintf("%s-client-secret", bankCode),
-			PrivateKeyPath: "../../keys/private_key.pem",
-			PublicKeyPath:  "../../keys/public_key.pem",
-			Environment:    "sandbox",
-			LogLevel:       "info",
-		}, bankCode)
-
-		if err != nil {
-			log.Printf("Failed to initialize %s client: %v", bankCode, err)
-			continue
-		}
-
-		// Test authentication for each bank
-		ctx := context.Background()
-		_, err = client.Auth().GetB2BToken(ctx)
-		if err != nil {
-			log.Printf("%s B2B token failed: %v", bankCode, err)
-		} else {
-			fmt.Printf("%s B2B token successful\n", bankCode)
-		}
-	}
-}
-
-// Example of dynamic endpoint configuration based on runtime conditions
-func demonstrateDynamicEndpoints() {
-	// This could be based on user selection, configuration file, etc.
-	selectedBank := "BCA"
-	isTestMode := true
-	
-	var customEndpoints *snap.CustomEndpoints
-	
-	if isTestMode {
-		// Use test endpoints
-		customEndpoints = &snap.CustomEndpoints{
-			VirtualAccount: &snap.VirtualAccountEndpoints{
-				CreateVA:  "/api/test/va/create",
-				InquiryVA: "/api/test/va/inquiry",
-			},
-			MPM: &snap.MPMEndpoints{
-				Transfer: "/api/test/mpm/transfer",
-			},
-		}
-	}
-	
-	client, err := snap.NewClientForBank(snap.Config{
-		BaseURL:         "https://sandbox.aspi-indonesia.or.id",
-		ClientID:        fmt.Sprintf("%s-client-id", selectedBank),
-		ClientSecret:    fmt.Sprintf("%s-client-secret", selectedBank),
-		PrivateKeyPath:  "../../keys/private_key.pem",
-		PublicKeyPath:   "../../keys/public_key.pem",
-		Environment:     "sandbox",
-		CustomEndpoints: customEndpoints,
-	}, selectedBank)
-
-	if err != nil {
-		log.Printf("Failed to initialize dynamic client: %v", err)
-		return
-	}
-
-	fmt.Printf("Dynamic client created for %s bank with test mode: %v\n", selectedBank, isTestMode)
-	fmt.Printf("Configuration: %+v\n", client.GetConfig().CustomEndpoints)
+	return defaultValue
 }

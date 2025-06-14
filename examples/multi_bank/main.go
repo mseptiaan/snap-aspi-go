@@ -4,37 +4,38 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/mseptiaan/snap-aspi-go/pkg/snap"
 	"github.com/mseptiaan/snap-aspi-go/pkg/types"
 )
 
 func main() {
-	fmt.Println("=== Bank-Specific Integration Examples ===")
+	log.Println("=== Multi-Bank Integration Example ===")
 
 	// Example 1: BCA Integration
-	fmt.Println("\n1. BCA Bank Integration")
+	log.Println("\n1. BCA Bank Integration")
 	demonstrateBCAIntegration()
 
 	// Example 2: BNI Integration
-	fmt.Println("\n2. BNI Bank Integration")
+	log.Println("\n2. BNI Bank Integration")
 	demonstrateBNIIntegration()
 
 	// Example 3: Multi-bank support
-	fmt.Println("\n3. Multi-Bank Support")
+	log.Println("\n3. Multi-Bank Support")
 	demonstrateMultiBankSupport()
 
-	fmt.Println("\n=== Bank-Specific Examples Complete ===")
+	log.Println("\n=== Multi-Bank Examples Complete ===")
 }
 
 func demonstrateBCAIntegration() {
 	// BCA-specific configuration
 	client, err := snap.NewClientForBank(snap.Config{
-		BaseURL:        "https://sandbox.aspi-indonesia.or.id",
-		ClientID:       "BCA_CLIENT_ID",
-		ClientSecret:   "BCA_CLIENT_SECRET",
-		PrivateKeyPath: "../../keys/private_key.pem",
-		PublicKeyPath:  "../../keys/public_key.pem",
+		BaseURL:        getEnvOrDefault("ASPI_BASE_URL", "https://sandbox.aspi-indonesia.or.id"),
+		ClientID:       getEnvOrDefault("BCA_CLIENT_ID", "bca-client-id"),
+		ClientSecret:   getEnvOrDefault("BCA_CLIENT_SECRET", "bca-client-secret"),
+		PrivateKeyPath: getEnvOrDefault("ASPI_PRIVATE_KEY_PATH", "keys/private_key.pem"),
+		PublicKeyPath:  getEnvOrDefault("ASPI_PUBLIC_KEY_PATH", "keys/public_key.pem"),
 		Environment:    "sandbox",
 		LogLevel:       "info",
 	}, "BCA")
@@ -106,11 +107,11 @@ func demonstrateBCAIntegration() {
 func demonstrateBNIIntegration() {
 	// BNI-specific configuration
 	client, err := snap.NewClientForBank(snap.Config{
-		BaseURL:        "https://sandbox.aspi-indonesia.or.id",
-		ClientID:       "BNI_CLIENT_ID",
-		ClientSecret:   "BNI_CLIENT_SECRET",
-		PrivateKeyPath: "../../keys/private_key.pem",
-		PublicKeyPath:  "../../keys/public_key.pem",
+		BaseURL:        getEnvOrDefault("ASPI_BASE_URL", "https://sandbox.aspi-indonesia.or.id"),
+		ClientID:       getEnvOrDefault("BNI_CLIENT_ID", "bni-client-id"),
+		ClientSecret:   getEnvOrDefault("BNI_CLIENT_SECRET", "bni-client-secret"),
+		PrivateKeyPath: getEnvOrDefault("ASPI_PRIVATE_KEY_PATH", "keys/private_key.pem"),
+		PublicKeyPath:  getEnvOrDefault("ASPI_PUBLIC_KEY_PATH", "keys/public_key.pem"),
 		Environment:    "sandbox",
 		LogLevel:       "info",
 	}, "BNI")
@@ -177,20 +178,20 @@ func demonstrateMultiBankSupport() {
 		{
 			Code:         "BCA",
 			Name:         "Bank Central Asia",
-			ClientID:     "BCA_CLIENT_ID",
-			ClientSecret: "BCA_CLIENT_SECRET",
+			ClientID:     getEnvOrDefault("BCA_CLIENT_ID", "bca-client-id"),
+			ClientSecret: getEnvOrDefault("BCA_CLIENT_SECRET", "bca-client-secret"),
 		},
 		{
 			Code:         "BNI",
 			Name:         "Bank Negara Indonesia",
-			ClientID:     "BNI_CLIENT_ID",
-			ClientSecret: "BNI_CLIENT_SECRET",
+			ClientID:     getEnvOrDefault("BNI_CLIENT_ID", "bni-client-id"),
+			ClientSecret: getEnvOrDefault("BNI_CLIENT_SECRET", "bni-client-secret"),
 		},
 		{
 			Code:         "BRI",
 			Name:         "Bank Rakyat Indonesia",
-			ClientID:     "BRI_CLIENT_ID",
-			ClientSecret: "BRI_CLIENT_SECRET",
+			ClientID:     getEnvOrDefault("BRI_CLIENT_ID", "bri-client-id"),
+			ClientSecret: getEnvOrDefault("BRI_CLIENT_SECRET", "bri-client-secret"),
 		},
 	}
 
@@ -199,11 +200,11 @@ func demonstrateMultiBankSupport() {
 
 	for _, bank := range banks {
 		client, err := snap.NewClientForBank(snap.Config{
-			BaseURL:        "https://sandbox.aspi-indonesia.or.id",
+			BaseURL:        getEnvOrDefault("ASPI_BASE_URL", "https://sandbox.aspi-indonesia.or.id"),
 			ClientID:       bank.ClientID,
 			ClientSecret:   bank.ClientSecret,
-			PrivateKeyPath: "../../keys/private_key.pem",
-			PublicKeyPath:  "../../keys/public_key.pem",
+			PrivateKeyPath: getEnvOrDefault("ASPI_PRIVATE_KEY_PATH", "keys/private_key.pem"),
+			PublicKeyPath:  getEnvOrDefault("ASPI_PUBLIC_KEY_PATH", "keys/public_key.pem"),
 			Environment:    "sandbox",
 			LogLevel:       "info",
 		}, bank.Code)
@@ -283,27 +284,9 @@ func routeToBank(accountNumber string) string {
 	}
 }
 
-// Example of bank-specific business logic
-func processBankSpecificLogic(bankCode string, client *snap.Client) {
-	ctx := context.Background()
-
-	switch bankCode {
-	case "BCA":
-		// BCA-specific processing
-		fmt.Println("Processing BCA-specific logic...")
-		// BCA might require additional validation steps
-		
-	case "BNI":
-		// BNI-specific processing
-		fmt.Println("Processing BNI-specific logic...")
-		// BNI might have different fee structures
-		
-	case "BRI":
-		// BRI-specific processing
-		fmt.Println("Processing BRI-specific logic...")
-		// BRI might have different limits
-		
-	default:
-		fmt.Println("Processing default logic...")
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
+	return defaultValue
 }
