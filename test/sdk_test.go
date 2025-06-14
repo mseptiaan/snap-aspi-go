@@ -7,7 +7,6 @@ import (
 	"github.com/mseptiaan/snap-aspi-go/pkg/snap"
 	"github.com/mseptiaan/snap-aspi-go/pkg/types"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSDKInitialization(t *testing.T) {
@@ -51,14 +50,14 @@ func TestSDKInitialization(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := snap.NewClient(tt.config)
-			
+
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, client)
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, client)
-				
+
 				// Test service access
 				assert.NotNil(t, client.VirtualAccount())
 				assert.NotNil(t, client.MPM())
@@ -70,14 +69,14 @@ func TestSDKInitialization(t *testing.T) {
 
 func TestBankPresets(t *testing.T) {
 	bankPresets := &snap.BankPresets{}
-	
+
 	supportedBanks := []string{"BCA", "BNI", "BRI", "MANDIRI", "CIMB", "PERMATA"}
-	
+
 	for _, bankCode := range supportedBanks {
 		t.Run(bankCode, func(t *testing.T) {
 			config := bankPresets.GetBankConfig(bankCode)
 			assert.NotNil(t, config, "Bank config should exist for %s", bankCode)
-			
+
 			// Check that bank-specific endpoints are set
 			if config.VirtualAccount != nil {
 				assert.NotEmpty(t, config.VirtualAccount.CreateVA, "CreateVA endpoint should be set for %s", bankCode)
@@ -213,10 +212,10 @@ func TestAmountType(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			amount := types.NewAmount(tt.amount, tt.currency)
-			
+
 			assert.NotNil(t, amount)
 			assert.Equal(t, tt.expected, amount.String())
-			
+
 			// Test conversion back to float64
 			value, err := amount.Float64()
 			assert.NoError(t, err)

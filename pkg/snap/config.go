@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/mseptiaan/snap-aspi-go/internal/config"
-	"github.com/mseptiaan/snap-aspi-go/internal/logging"
 )
 
 // Config represents the SDK configuration
@@ -16,21 +15,21 @@ type Config struct {
 	ClientSecret   string `json:"clientSecret"`
 	PrivateKeyPath string `json:"privateKeyPath"`
 	PublicKeyPath  string `json:"publicKeyPath"`
-	
+
 	// Optional: Environment (sandbox/production)
 	Environment string `json:"environment,omitempty"`
-	
+
 	// Optional: Timeout configurations
 	ConnectTimeout int `json:"connectTimeout,omitempty"` // seconds
 	RequestTimeout int `json:"requestTimeout,omitempty"` // seconds
-	
+
 	// Optional: Retry configurations
 	MaxRetries      int `json:"maxRetries,omitempty"`
 	BackoffDuration int `json:"backoffDuration,omitempty"` // seconds
-	
+
 	// Optional: Logging
 	LogLevel string `json:"logLevel,omitempty"` // debug, info, warn, error
-	
+
 	// Optional: Custom Endpoints for different banks
 	CustomEndpoints *CustomEndpoints `json:"customEndpoints,omitempty"`
 }
@@ -40,10 +39,10 @@ type CustomEndpoints struct {
 	// Authentication endpoints
 	B2BToken   string `json:"b2bToken,omitempty"`
 	B2B2CToken string `json:"b2b2cToken,omitempty"`
-	
+
 	// Virtual Account endpoints
 	VirtualAccount *VirtualAccountEndpoints `json:"virtualAccount,omitempty"`
-	
+
 	// MPM endpoints
 	MPM *MPMEndpoints `json:"mpm,omitempty"`
 }
@@ -63,15 +62,15 @@ type VirtualAccountEndpoints struct {
 
 // MPMEndpoints defines custom MPM endpoints
 type MPMEndpoints struct {
-	Transfer        string `json:"transfer,omitempty"`
-	Inquiry         string `json:"inquiry,omitempty"`
-	Status          string `json:"status,omitempty"`
-	Refund          string `json:"refund,omitempty"`
-	BalanceInquiry  string `json:"balanceInquiry,omitempty"`
-	AccountInquiry  string `json:"accountInquiry,omitempty"`
-	History         string `json:"history,omitempty"`
-	GenerateQR      string `json:"generateQR,omitempty"`
-	NotifyQR        string `json:"notifyQR,omitempty"`
+	Transfer       string `json:"transfer,omitempty"`
+	Inquiry        string `json:"inquiry,omitempty"`
+	Status         string `json:"status,omitempty"`
+	Refund         string `json:"refund,omitempty"`
+	BalanceInquiry string `json:"balanceInquiry,omitempty"`
+	AccountInquiry string `json:"accountInquiry,omitempty"`
+	History        string `json:"history,omitempty"`
+	GenerateQR     string `json:"generateQR,omitempty"`
+	NotifyQR       string `json:"notifyQR,omitempty"`
 }
 
 // BankPresets provides predefined configurations for different banks
@@ -297,27 +296,27 @@ func convertToInternalConfig(cfg Config) *config.Config {
 	if environment == "" {
 		environment = "sandbox"
 	}
-	
+
 	connectTimeout := cfg.ConnectTimeout
 	if connectTimeout == 0 {
 		connectTimeout = 10
 	}
-	
+
 	requestTimeout := cfg.RequestTimeout
 	if requestTimeout == 0 {
 		requestTimeout = 30
 	}
-	
+
 	maxRetries := cfg.MaxRetries
 	if maxRetries == 0 {
 		maxRetries = 3
 	}
-	
+
 	backoffDuration := cfg.BackoffDuration
 	if backoffDuration == 0 {
 		backoffDuration = 1
 	}
-	
+
 	logLevel := cfg.LogLevel
 	if logLevel == "" {
 		logLevel = "info"
