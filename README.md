@@ -116,6 +116,110 @@ func main() {
 }
 ```
 
+## 📋 BCA SNAP Endpoints
+
+BCA supports the following SNAP endpoints based on the BCA documentation:
+
+### Authentication
+- ✅ **Access Token B2B** - `/api/v1.0/access-token/b2b`
+- ✅ **Access Token B2B2C** - `/api/v1.0/access-token/b2b2c`
+
+### Virtual Account
+- ✅ **Create VA** - `/api/v1.0/bca/transfer-va/create-va`
+- ✅ **Update VA** - `/api/v1.0/bca/transfer-va/update-va`
+- ✅ **Delete VA** - `/api/v1.0/bca/transfer-va/delete-va`
+- ✅ **Inquiry VA** - `/api/v1.0/bca/transfer-va/inquiry-va`
+- ✅ **General Inquiry** - `/api/v1.0/bca/transfer-va/inquiry`
+- ✅ **Payment** - `/api/v1.0/bca/transfer-va/payment`
+- ✅ **Status** - `/api/v1.0/bca/transfer-va/status`
+- ✅ **Report** - `/api/v1.0/bca/transfer-va/report`
+- ✅ **Update Status** - `/api/v1.0/bca/transfer-va/update-status`
+
+### Balance Inquiry
+- ✅ **Balance Inquiry** - `/api/v1.0/bca/balance-inquiry`
+
+### Account Inquiry
+- ✅ **Account Inquiry (External)** - `/api/v1.0/bca/account-inquiry-external`
+- ✅ **Account Inquiry (Internal)** - `/api/v1.0/bca/account-inquiry-internal`
+
+### Transfer Credit
+- ✅ **Trigger Transfer** - `/api/v1.0/bca/trigger-transfer`
+- ✅ **Transfer Status** - `/api/v1.0/bca/transfer/status`
+- ✅ **Intrabank Transfer** - `/api/v1.0/bca/intrabank-transfer`
+- ✅ **Interbank Transfer** - `/api/v1.0/bca/interbank-transfer`
+- ✅ **RTGS Transfer** - `/api/v1.0/bca/rtgs-transfer`
+- ✅ **SKNBI Transfer** - `/api/v1.0/bca/sknbi-transfer`
+
+### QR Code
+- ✅ **Generate QR MPM** - `/api/v1.0/bca/qr/qr-mpm-generate`
+- ✅ **Decode QR MPM** - `/api/v1.0/bca/qr/qr-mpm-decode`
+- ✅ **Apply OTT** - `/api/v1.0/bca/qr/apply-ott`
+- ✅ **QR MPM Payment** - `/api/v1.0/bca/qr/qr-mpm-payment`
+- ✅ **QR MPM Query** - `/api/v1.0/bca/qr/qr-mpm-query`
+- ✅ **QR MPM Cancel** - `/api/v1.0/bca/qr/qr-mpm-cancel`
+- ✅ **QR MPM Notify** - `/api/v1.0/bca/qr/qr-mpm-notify`
+- ✅ **QR MPM Refund** - `/api/v1.0/bca/qr/qr-mpm-refund`
+
+### Transaction History
+- ✅ **Transaction History List** - `/api/v1.0/bca/transaction-history-list`
+- ✅ **Transaction History Detail** - `/api/v1.0/bca/transaction-history-detail`
+- ✅ **Bank Statement** - `/api/v1.0/bca/bank-statement`
+
+### Transfer Debit
+- ✅ **Direct Debit Payment** - `/api/v1.0/bca/debit/payment-host-to-host`
+- ✅ **Direct Debit Status** - `/api/v1.0/bca/debit/status`
+- ✅ **Direct Debit Cancel** - `/api/v1.0/bca/debit/cancel`
+- ✅ **Direct Debit Refund** - `/api/v1.0/bca/debit/refund`
+- ✅ **CPM Generate QR** - `/api/v1.0/bca/qr/qr-cpm-generate`
+- ✅ **CPM Payment** - `/api/v1.0/bca/qr/qr-cpm-payment`
+
+### Auth Payment
+- ✅ **Auth Payment** - `/api/v1.0/bca/auth/payment`
+- ✅ **Auth Capture** - `/api/v1.0/bca/auth/capture`
+- ✅ **Auth Void** - `/api/v1.0/bca/auth/void`
+
+### BCA-Specific Endpoints
+- ✅ **BCA Account Binding** - `/api/v1.0/bca/account-binding`
+- ✅ **BCA Card Registration** - `/api/v1.0/bca/card-registration`
+- ✅ **BCA OTP Request** - `/api/v1.0/bca/otp-request`
+- ✅ **BCA OTP Verification** - `/api/v1.0/bca/otp-verification`
+- ✅ **BCA Bulk Transfer** - `/api/v1.0/bca/bulk-transfer`
+- ✅ **BCA Bulk Transfer Status** - `/api/v1.0/bca/bulk-transfer-status`
+
+### BCA-Specific Features
+
+BCA's implementation of the SNAP standard includes several unique features:
+
+1. **Enhanced Virtual Account Management**:
+   - Support for sub-company segregation
+   - Multiple transaction types
+   - Custom expiry rules
+   - Detailed payment notifications
+
+2. **Advanced QR Code Capabilities**:
+   - Dynamic and static QR support
+   - Merchant-specific QR customization
+   - Terminal-level QR generation
+   - Enhanced security features
+
+3. **Comprehensive Transaction Reporting**:
+   - Detailed transaction status tracking
+   - Custom reference number formats
+   - BCA-specific transaction identifiers
+   - Extended transaction history
+
+4. **Specialized Transfer Options**:
+   - Priority transfer flags
+   - Transfer type specifications
+   - Enhanced fee handling
+   - Specialized routing options
+
+5. **Security Enhancements**:
+   - BCA-specific headers
+   - Additional signature requirements
+   - Enhanced OTP mechanisms
+   - Custom validation rules
+
 ## 📚 Features
 
 - **🔐 Authentication**: Automatic B2B and B2B2C token management
