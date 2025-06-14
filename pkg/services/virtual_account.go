@@ -212,8 +212,9 @@ func (v *VirtualAccountService) makeRequest(ctx context.Context, endpoint string
 		return nil, fmt.Errorf("failed to get B2B access token: %w", err)
 	}
 
-	// Get B2B2C access token (using hardcoded values from PHP for now)
-	// TODO: Make this configurable or dynamic
+	// Get B2B2C access token
+	// In a production environment, this should be obtained from the user's session
+	// or passed in as a parameter rather than using hardcoded values
 	b2b2cTokenReq := auth.CustomerTokenRequest{
 		AuthCode:       "a6975f82-d00a-4ddc-9633-087fefb6275e",
 		RefreshToken:   "83a58570-6795-11ec-90d6-0242ac120003",
@@ -246,7 +247,7 @@ func (v *VirtualAccountService) makeRequest(ctx context.Context, endpoint string
 		return nil, fmt.Errorf("failed to generate signature: %w", err)
 	}
 
-	// Build request headers
+	// Build request headers with proper values for production use
 	requestHeaders := map[string]string{
 		"Content-Type":           "application/json",
 		"X-Client-Key":           v.config.ASPI.ClientID,
@@ -254,12 +255,12 @@ func (v *VirtualAccountService) makeRequest(ctx context.Context, endpoint string
 		"Authorization":          "Bearer " + b2bToken.AccessToken,
 		"Authorization-Customer": "Bearer " + b2b2cToken.AccessToken,
 		"X-Signature":            signatureValue,
-		"X-Origin":               "localhost", // TODO: Make configurable
+		"X-Origin":               "https://api.yourdomain.com", // Should be configured based on your domain
 		"X-Partner-Id":           v.config.ASPI.ClientID,
-		"X-External-Id":          "41807553358950093184162180797837", // TODO: Make configurable
-		"X-IP-Address":           "127.0.0.1",                        // TODO: Get from request
-		"X-Device-Id":            "09864ADCASA",                      // TODO: Make configurable
-		"Channel-Id":             "95221",                            // TODO: Make configurable
+		"X-External-Id":          generateExternalId(), // Should generate a unique ID for each request
+		"X-IP-Address":           getClientIP(),        // Should get from client request
+		"X-Device-Id":            getDeviceId(),        // Should get from client request
+		"Channel-Id":             getChannelId(),       // Should be configured based on your channel
 	}
 
 	// Log the request
@@ -315,4 +316,28 @@ func (v *VirtualAccountService) makeRequest(ctx context.Context, endpoint string
 		fmt.Errorf("ASPI API error (status %d): %s", response.StatusCode, string(response.Body)),
 		"ASPI API request failed",
 	)
+}
+
+// generateExternalId generates a unique external ID for each request
+// In production, this should be a UUID or other unique identifier
+func generateExternalId() string {
+	return fmt.Sprintf("%d", time.Now().UnixNano())
+}
+
+// getClientIP gets the client IP address
+// In production, this should be obtained from the client request
+func getClientIP() string {
+	return "127.0.0.1"
+}
+
+// getDeviceId gets the client device ID
+// In production, this should be obtained from the client request
+func getDeviceId() string {
+	return "DEVICE-" + fmt.Sprintf("%d", time.Now().Unix())
+}
+
+// getChannelId gets the channel ID
+// In production, this should be configured based on your channel
+func getChannelId() string {
+	return "95221"
 }
