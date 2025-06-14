@@ -3,9 +3,16 @@ package cache
 import (
 	"sync"
 	"time"
-
-	"github.com/mseptiaan/snap-aspi-go/internal/auth"
 )
+
+// TokenResponse represents the response from access token endpoints
+type TokenResponse struct {
+	ResponseCode    string `json:"responseCode"`
+	ResponseMessage string `json:"responseMessage"`
+	AccessToken     string `json:"accessToken"`
+	TokenType       string `json:"tokenType"`
+	ExpiresIn       string `json:"expiresIn"`
+}
 
 // TokenCache provides thread-safe caching for access tokens
 type TokenCache struct {
@@ -15,7 +22,7 @@ type TokenCache struct {
 
 // CachedToken represents a cached token with expiration
 type CachedToken struct {
-	Token     *auth.TokenResponse
+	Token     *TokenResponse
 	ExpiresAt time.Time
 }
 
@@ -27,7 +34,7 @@ func NewTokenCache() *TokenCache {
 }
 
 // Get retrieves a token from cache if valid
-func (c *TokenCache) Get(key string) (*auth.TokenResponse, bool) {
+func (c *TokenCache) Get(key string) (*TokenResponse, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -45,7 +52,7 @@ func (c *TokenCache) Get(key string) (*auth.TokenResponse, bool) {
 }
 
 // Set stores a token in cache
-func (c *TokenCache) Set(key string, token *auth.TokenResponse, ttl time.Duration) {
+func (c *TokenCache) Set(key string, token *TokenResponse, ttl time.Duration) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 

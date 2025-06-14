@@ -47,7 +47,7 @@ func main() {
 	httpClient := client.NewOptimizedSnapClient(cfg, logger)
 
 	// Initialize optimized access token manager
-	accessTokenManager, err := auth.NewOptimizedAccessTokenManager(cfg, httpClient, logger)
+	accessTokenManager, err := auth.NewAccessTokenManager(cfg, httpClient, logger)
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to initialize access token manager")
 	}
@@ -170,7 +170,7 @@ func main() {
 func setupOptimizedRoutes(
 	router *gin.Engine,
 	cfg *config.Config,
-	accessTokenManager *auth.OptimizedAccessTokenManager,
+	accessTokenManager *auth.AccessTokenManager,
 	vaService *services.VirtualAccountService,
 	mpmService *services.MPMService,
 	logger logging.Logger,
@@ -310,9 +310,13 @@ func setupOptimizedRoutes(
 
 // Optimized handler functions with better error handling and logging
 
-func handleGetB2BTokenOptimized(c *gin.Context, accessTokenManager *auth.OptimizedAccessTokenManager, logger logging.Logger) {
+func handleGetB2BTokenOptimized(
+	c *gin.Context,
+	accessTokenManager *auth.AccessTokenManager,
+	logger logging.Logger,
+) {
 	requestID := c.GetString("request_id")
-	
+
 	tokenResponse, err := accessTokenManager.GetAccessToken(c.Request.Context())
 	if err != nil {
 		logger.WithFields(map[string]interface{}{
@@ -327,16 +331,20 @@ func handleGetB2BTokenOptimized(c *gin.Context, accessTokenManager *auth.Optimiz
 	c.JSON(http.StatusOK, tokenResponse)
 }
 
-func handleGetB2B2CTokenOptimized(c *gin.Context, accessTokenManager *auth.OptimizedAccessTokenManager, logger logging.Logger) {
+func handleGetB2B2CTokenOptimized(
+	c *gin.Context,
+	accessTokenManager *auth.AccessTokenManager,
+	logger logging.Logger,
+) {
 	requestID := c.GetString("request_id")
-	
+
 	var request auth.CustomerTokenRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
 		logger.WithFields(map[string]interface{}{
 			"request_id": requestID,
 			"error":      err.Error(),
 		}).Warn("Invalid B2B2C token request")
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":      "Invalid request",
 			"message":    "Request body is invalid",
@@ -361,14 +369,14 @@ func handleGetB2B2CTokenOptimized(c *gin.Context, accessTokenManager *auth.Optim
 
 func handleCreateVAOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
 	requestID := c.GetString("request_id")
-	
+
 	var payload types.CreateVAPayload
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		logger.WithFields(map[string]interface{}{
 			"request_id": requestID,
 			"error":      err.Error(),
 		}).Warn("Invalid create VA request")
-		
+
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":      "Invalid request",
 			"message":    "Request body is invalid",
@@ -383,7 +391,7 @@ func handleCreateVAOptimized(c *gin.Context, vaService *services.VirtualAccountS
 			"request_id": requestID,
 			"error":      err.Error(),
 		}).Error("Failed to create Virtual Account")
-		
+
 		handleErrorResponse(c, err)
 		return
 	}
@@ -395,7 +403,7 @@ func handleCreateVAOptimized(c *gin.Context, vaService *services.VirtualAccountS
 
 func handleErrorResponse(c *gin.Context, err error) {
 	requestID := c.GetString("request_id")
-	
+
 	switch e := err.(type) {
 	case *snapErrors.Error:
 		statusCode := e.GetHTTPStatus()
@@ -415,20 +423,37 @@ func handleErrorResponse(c *gin.Context, err error) {
 }
 
 // Add placeholder handlers for other endpoints...
-func handleUpdateVAOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)           {}
-func handleDeleteVAOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)           {}
-func handleInquiryVAOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)          {}
-func handleInquiryOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)            {}
-func handlePaymentOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)            {}
-func handleStatusOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)             {}
-func handleReportOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)             {}
-func handleUpdateStatusOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger)       {}
-func handleMPMTransferOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)                  {}
-func handleMPMInquiryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)                   {}
-func handleMPMStatusOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)                    {}
-func handleMPMRefundOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)                    {}
-func handleMPMBalanceInquiryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)            {}
-func handleMPMAccountInquiryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)            {}
-func handleMPMHistoryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)                   {}
-func handleMPMGenerateQROptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)                {}
-func handleMPMNotifyQROptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger)                  {}
+func handleUpdateVAOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handleDeleteVAOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handleInquiryVAOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handleInquiryOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handlePaymentOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handleStatusOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handleReportOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handleUpdateStatusOptimized(c *gin.Context, vaService *services.VirtualAccountService, logger logging.Logger) {
+}
+func handleMPMTransferOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMInquiryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMStatusOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMRefundOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMBalanceInquiryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMAccountInquiryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMHistoryOptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMGenerateQROptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}
+func handleMPMNotifyQROptimized(c *gin.Context, mpmService *services.MPMService, logger logging.Logger) {
+}

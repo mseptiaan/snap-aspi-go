@@ -4,15 +4,34 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
+	"strconv"
+	"sync"
 	"time"
 
+	"github.com/mseptiaan/snap-aspi-go/internal/cache"
 	"github.com/mseptiaan/snap-aspi-go/internal/config"
 	"github.com/mseptiaan/snap-aspi-go/internal/errors"
 	"github.com/mseptiaan/snap-aspi-go/internal/logging"
 	"github.com/mseptiaan/snap-aspi-go/internal/signature"
 	"github.com/mseptiaan/snap-aspi-go/pkg/contracts"
 )
+
+type AccessTokenManager struct {
+	config           *config.Config
+	httpClient       contracts.HTTPClient
+	asymmetricSigner *signature.AsymmetricSigner
+	logger           logging.Logger
+	tokenCache       *cache.TokenCache
+
+	// Endpoints
+	b2bEndpoint   string
+	b2b2cEndpoint string
+
+	// Prevent concurrent token requests
+	b2bMutex   sync.Mutex
+	b2b2cMutex sync.Mutex
+}
 
 // TokenResponse represents the response from access token endpoints
 type TokenResponse struct {
@@ -30,19 +49,7 @@ type CustomerTokenRequest struct {
 	AdditionalInfo map[string]interface{} `json:"additionalInfo"`
 }
 
-// AccessTokenManager handles access token operations
-type AccessTokenManager struct {
-	config           *config.Config
-	httpClient       contracts.HTTPClient
-	asymmetricSigner *signature.AsymmetricSigner
-	logger           logging.Logger
-
-	// Endpoints
-	b2bEndpoint   string
-	b2b2cEndpoint string
-}
-
-// NewAccessTokenManager creates a new access token manager
+// NewOptimizedAccessTokenManager creates a new optimized access token manager
 func NewAccessTokenManager(
 	cfg *config.Config,
 	httpClient contracts.HTTPClient,
@@ -65,13 +72,44 @@ func NewAccessTokenManager(
 		httpClient:       httpClient,
 		asymmetricSigner: asymmetricSigner,
 		logger:           logger,
+		tokenCache:       cache.NewTokenCache(),
 		b2bEndpoint:      cfg.ASPI.Endpoints.B2BToken,
 		b2b2cEndpoint:    cfg.ASPI.Endpoints.B2B2CToken,
 	}, nil
 }
 
-// GetAccessToken retrieves a B2B access token
+// GetAccessToken retrieves a B2B access token with caching
 func (m *AccessTokenManager) GetAccessToken(ctx context.Context) (*TokenResponse, error) {
+	cacheKey := "b2b_token"
+
+	// Try to get from cache first
+	if token, found := m.tokenCache.Get(cacheKey); found {
+		m.logger.Debug("B2B token retrieved from cache")
+		return &TokenResponse{
+			ResponseCode:    token.ResponseCode,
+			ResponseMessage: token.ResponseMessage,
+			AccessToken:     token.AccessToken,
+			TokenType:       token.TokenType,
+			ExpiresIn:       token.ExpiresIn,
+		}, nil
+	}
+
+	// Prevent concurrent requests for the same token
+	m.b2bMutex.Lock()
+	defer m.b2bMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if token, found := m.tokenCache.Get(cacheKey); found {
+		m.logger.Debug("B2B token retrieved from cache after lock")
+		return &TokenResponse{
+			ResponseCode:    token.ResponseCode,
+			ResponseMessage: token.ResponseMessage,
+			AccessToken:     token.AccessToken,
+			TokenType:       token.TokenType,
+			ExpiresIn:       token.ExpiresIn,
+		}, nil
+	}
+
 	// Create headers with signature
 	headers, err := m.createAuthHeaders()
 	if err != nil {
@@ -109,6 +147,19 @@ func (m *AccessTokenManager) GetAccessToken(ctx context.Context) (*TokenResponse
 		return nil, errors.NewInternalError(err, "failed to parse token response")
 	}
 
+	// Cache the token
+	if expiresIn, err := strconv.Atoi(tokenResponse.ExpiresIn); err == nil {
+		ttl := time.Duration(expiresIn) * time.Second
+		m.tokenCache.Set(cacheKey, &cache.TokenResponse{
+			ResponseCode:    tokenResponse.ResponseCode,
+			ResponseMessage: tokenResponse.ResponseMessage,
+			AccessToken:     tokenResponse.AccessToken,
+			TokenType:       tokenResponse.TokenType,
+			ExpiresIn:       tokenResponse.ExpiresIn,
+		}, ttl)
+		m.logger.WithField("ttl", ttl).Debug("B2B token cached")
+	}
+
 	// Log successful token acquisition
 	m.logger.WithFields(map[string]interface{}{
 		"response_code": tokenResponse.ResponseCode,
@@ -119,7 +170,7 @@ func (m *AccessTokenManager) GetAccessToken(ctx context.Context) (*TokenResponse
 	return &tokenResponse, nil
 }
 
-// GetCustomerAccessToken retrieves a B2B2C access token
+// GetCustomerAccessToken retrieves a B2B2C access token with caching
 func (m *AccessTokenManager) GetCustomerAccessToken(
 	ctx context.Context,
 	request CustomerTokenRequest,
@@ -127,6 +178,37 @@ func (m *AccessTokenManager) GetCustomerAccessToken(
 	// Validate request
 	if err := m.validateCustomerTokenRequest(request); err != nil {
 		return nil, err
+	}
+
+	// Create cache key based on auth code
+	cacheKey := fmt.Sprintf("b2b2c_token_%s", request.AuthCode)
+
+	// Try to get from cache first
+	if token, found := m.tokenCache.Get(cacheKey); found {
+		m.logger.Debug("B2B2C token retrieved from cache")
+		return &TokenResponse{
+			ResponseCode:    token.ResponseCode,
+			ResponseMessage: token.ResponseMessage,
+			AccessToken:     token.AccessToken,
+			TokenType:       token.TokenType,
+			ExpiresIn:       token.ExpiresIn,
+		}, nil
+	}
+
+	// Prevent concurrent requests for the same token
+	m.b2b2cMutex.Lock()
+	defer m.b2b2cMutex.Unlock()
+
+	// Double-check cache after acquiring lock
+	if token, found := m.tokenCache.Get(cacheKey); found {
+		m.logger.Debug("B2B2C token retrieved from cache after lock")
+		return &TokenResponse{
+			ResponseCode:    token.ResponseCode,
+			ResponseMessage: token.ResponseMessage,
+			AccessToken:     token.AccessToken,
+			TokenType:       token.TokenType,
+			ExpiresIn:       token.ExpiresIn,
+		}, nil
 	}
 
 	// Create headers with signature
@@ -167,6 +249,19 @@ func (m *AccessTokenManager) GetCustomerAccessToken(
 	var tokenResponse TokenResponse
 	if err := json.Unmarshal(response.Body, &tokenResponse); err != nil {
 		return nil, errors.NewInternalError(err, "failed to parse customer token response")
+	}
+
+	// Cache the token
+	if expiresIn, err := strconv.Atoi(tokenResponse.ExpiresIn); err == nil {
+		ttl := time.Duration(expiresIn) * time.Second
+		m.tokenCache.Set(cacheKey, &cache.TokenResponse{
+			ResponseCode:    tokenResponse.ResponseCode,
+			ResponseMessage: tokenResponse.ResponseMessage,
+			AccessToken:     tokenResponse.AccessToken,
+			TokenType:       tokenResponse.TokenType,
+			ExpiresIn:       tokenResponse.ExpiresIn,
+		}, ttl)
+		m.logger.WithField("ttl", ttl).Debug("B2B2C token cached")
 	}
 
 	// Log successful token acquisition
@@ -222,13 +317,18 @@ func (m *AccessTokenManager) validateCustomerTokenRequest(request CustomerTokenR
 	return nil
 }
 
+// CleanupCache removes expired tokens from cache
+func (m *AccessTokenManager) CleanupCache() {
+	m.tokenCache.Cleanup()
+}
+
 // loadPrivateKey loads the private key from file
 func loadPrivateKey(keyPath string) ([]byte, error) {
 	if keyPath == "" {
 		return nil, fmt.Errorf("private key path not configured")
 	}
 
-	keyData, err := ioutil.ReadFile(keyPath)
+	keyData, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read private key file: %v", err)
 	}
