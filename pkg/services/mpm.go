@@ -45,28 +45,38 @@ func NewMPMService(
 		symSigner:   symSigner,
 		config:      cfg,
 		logger:      logger,
-		// ASPI MPM Transfer Credit API endpoints
+		// ASPI MPM API endpoints - Updated to match ASPI documentation
 		endpoints: map[string]string{
+			"generate-qr":     "/api/v1.0/qr/qr-mpm-generate",
+			"decode-qr":       "/api/v1.0/qr/qr-mpm-decode",
+			"apply-ott":       "/api/v1.0/qr/apply-ott",
+			"payment":         "/api/v1.0/qr/qr-mpm-payment",
+			"query-payment":   "/api/v1.0/qr/qr-mpm-query",
+			"notify-qr":       "/api/v1.0/qr/qr-mpm-notify",
+			"cancel-payment":  "/api/v1.0/qr/qr-mpm-cancel",
+			"refund":          "/api/v1.0/qr/qr-mpm-refund",
 			"transfer":        "/api/v1.0/transfer-kredit/mpm",
 			"inquiry":         "/api/v1.0/transfer-kredit/mpm/inquiry",
-			"status":          "/api/v1.0/transfer-kredit/mpm/status",
-			"refund":          "/api/v1.0/transfer-kredit/mpm/refund",
+			"status":          "/api/v1.0/qr/qr-mpm-status",
 			"balance-inquiry": "/api/v1.0/transfer-kredit/mpm/balance-inquiry",
 			"account-inquiry": "/api/v1.0/transfer-kredit/mpm/account-inquiry",
 			"history":         "/api/v1.0/transfer-kredit/mpm/history",
-			"generate-qr":     "/api/v1.0/qr/qr-mpm-generate",
-			"notify-qr":       "/api/v1.0/qr/qr-mpm-notify",
 		},
 		methods: map[string]string{
+			"generate-qr":     "POST",
+			"decode-qr":       "POST",
+			"apply-ott":       "POST",
+			"payment":         "POST",
+			"query-payment":   "POST",
+			"notify-qr":       "POST",
+			"cancel-payment":  "POST",
+			"refund":          "POST",
 			"transfer":        "POST",
 			"inquiry":         "POST",
 			"status":          "POST",
-			"refund":          "POST",
 			"balance-inquiry": "POST",
 			"account-inquiry": "POST",
 			"history":         "POST",
-			"generate-qr":     "POST",
-			"notify-qr":       "POST",
 		},
 	}, nil
 }
@@ -99,17 +109,22 @@ func NewMPMServiceWithEndpoints(
 
 // getMPMEndpoints returns MPM endpoints (custom or default)
 func getMPMEndpoints(customEndpoints map[string]string) map[string]string {
-	// Default endpoints
+	// Default endpoints - Updated to match ASPI documentation
 	defaultEndpoints := map[string]string{
+		"generate-qr":     "/api/v1.0/qr/qr-mpm-generate",
+		"decode-qr":       "/api/v1.0/qr/qr-mpm-decode",
+		"apply-ott":       "/api/v1.0/qr/apply-ott",
+		"payment":         "/api/v1.0/qr/qr-mpm-payment",
+		"query-payment":   "/api/v1.0/qr/qr-mpm-query",
+		"notify-qr":       "/api/v1.0/qr/qr-mpm-notify",
+		"cancel-payment":  "/api/v1.0/qr/qr-mpm-cancel",
+		"refund":          "/api/v1.0/qr/qr-mpm-refund",
 		"transfer":        "/api/v1.0/transfer-kredit/mpm",
 		"inquiry":         "/api/v1.0/transfer-kredit/mpm/inquiry",
-		"status":          "/api/v1.0/transfer-kredit/mpm/status",
-		"refund":          "/api/v1.0/transfer-kredit/mpm/refund",
+		"status":          "/api/v1.0/qr/qr-mpm-status",
 		"balance-inquiry": "/api/v1.0/transfer-kredit/mpm/balance-inquiry",
 		"account-inquiry": "/api/v1.0/transfer-kredit/mpm/account-inquiry",
 		"history":         "/api/v1.0/transfer-kredit/mpm/history",
-		"generate-qr":     "/api/v1.0/qr/qr-mpm-generate",
-		"notify-qr":       "/api/v1.0/qr/qr-mpm-notify",
 	}
 
 	// If custom endpoints provided, merge them
@@ -127,15 +142,20 @@ func getMPMEndpoints(customEndpoints map[string]string) map[string]string {
 // getMPMMethods returns HTTP methods for MPM endpoints
 func getMPMMethods() map[string]string {
 	return map[string]string{
+		"generate-qr":     "POST",
+		"decode-qr":       "POST",
+		"apply-ott":       "POST",
+		"payment":         "POST",
+		"query-payment":   "POST",
+		"notify-qr":       "POST",
+		"cancel-payment":  "POST",
+		"refund":          "POST",
 		"transfer":        "POST",
 		"inquiry":         "POST",
 		"status":          "POST",
-		"refund":          "POST",
 		"balance-inquiry": "POST",
 		"account-inquiry": "POST",
 		"history":         "POST",
-		"generate-qr":     "POST",
-		"notify-qr":       "POST",
 	}
 }
 
@@ -202,6 +222,46 @@ func (m *MPMService) GenerateQR(
 	}
 
 	return &qrResponse, nil
+}
+
+// DecodeQR decodes a QR code for MPM payment
+func (m *MPMService) DecodeQR(
+	ctx context.Context,
+	payload *types.MPMDecodeQRPayload,
+) (map[string]any, error) {
+	return m.makeRequest(ctx, "decode-qr", payload)
+}
+
+// ApplyOTT applies a one-time token for payment redirect
+func (m *MPMService) ApplyOTT(
+	ctx context.Context,
+	payload *types.MPMApplyOTTPayload,
+) (map[string]any, error) {
+	return m.makeRequest(ctx, "apply-ott", payload)
+}
+
+// Payment processes a payment for MPM
+func (m *MPMService) Payment(
+	ctx context.Context,
+	payload *types.MPMPaymentPayload,
+) (map[string]any, error) {
+	return m.makeRequest(ctx, "payment", payload)
+}
+
+// QueryPayment queries payment status for MPM
+func (m *MPMService) QueryPayment(
+	ctx context.Context,
+	payload *types.MPMQueryPaymentPayload,
+) (map[string]any, error) {
+	return m.makeRequest(ctx, "query-payment", payload)
+}
+
+// CancelPayment cancels a payment for MPM
+func (m *MPMService) CancelPayment(
+	ctx context.Context,
+	payload *types.MPMCancelPaymentPayload,
+) (map[string]any, error) {
+	return m.makeRequest(ctx, "cancel-payment", payload)
 }
 
 // NotifyQR handles QR MPM payment notification

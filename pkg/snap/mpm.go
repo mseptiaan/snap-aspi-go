@@ -33,6 +33,21 @@ type MPMService interface {
 	// GenerateQR generates QR code for MPM payment
 	GenerateQR(ctx context.Context, payload *types.MPMGenerateQRPayload) (*types.MPMQRResponse, error)
 	
+	// DecodeQR decodes a QR code for MPM payment
+	DecodeQR(ctx context.Context, payload *types.MPMDecodeQRPayload) (map[string]any, error)
+	
+	// ApplyOTT applies a one-time token for payment redirect
+	ApplyOTT(ctx context.Context, payload *types.MPMApplyOTTPayload) (map[string]any, error)
+	
+	// Payment processes a payment for MPM
+	Payment(ctx context.Context, payload *types.MPMPaymentPayload) (map[string]any, error)
+	
+	// QueryPayment queries payment status for MPM
+	QueryPayment(ctx context.Context, payload *types.MPMQueryPaymentPayload) (map[string]any, error)
+	
+	// CancelPayment cancels a payment for MPM
+	CancelPayment(ctx context.Context, payload *types.MPMCancelPaymentPayload) (map[string]any, error)
+	
 	// NotifyQR handles QR MPM payment notification
 	NotifyQR(ctx context.Context, payload *types.MPMNotifyQRPayload) (*types.MPMNotifyResponse, error)
 }
@@ -80,6 +95,31 @@ func (m *mpmService) History(ctx context.Context, payload *types.MPMHistoryPaylo
 // GenerateQR generates QR code for MPM payment
 func (m *mpmService) GenerateQR(ctx context.Context, payload *types.MPMGenerateQRPayload) (*types.MPMQRResponse, error) {
 	return m.svc.GenerateQR(ctx, payload)
+}
+
+// DecodeQR decodes a QR code for MPM payment
+func (m *mpmService) DecodeQR(ctx context.Context, payload *types.MPMDecodeQRPayload) (map[string]any, error) {
+	return m.svc.DecodeQR(ctx, payload)
+}
+
+// ApplyOTT applies a one-time token for payment redirect
+func (m *mpmService) ApplyOTT(ctx context.Context, payload *types.MPMApplyOTTPayload) (map[string]any, error) {
+	return m.svc.ApplyOTT(ctx, payload)
+}
+
+// Payment processes a payment for MPM
+func (m *mpmService) Payment(ctx context.Context, payload *types.MPMPaymentPayload) (map[string]any, error) {
+	return m.svc.Payment(ctx, payload)
+}
+
+// QueryPayment queries payment status for MPM
+func (m *mpmService) QueryPayment(ctx context.Context, payload *types.MPMQueryPaymentPayload) (map[string]any, error) {
+	return m.svc.QueryPayment(ctx, payload)
+}
+
+// CancelPayment cancels a payment for MPM
+func (m *mpmService) CancelPayment(ctx context.Context, payload *types.MPMCancelPaymentPayload) (map[string]any, error) {
+	return m.svc.CancelPayment(ctx, payload)
 }
 
 // NotifyQR handles QR MPM payment notification

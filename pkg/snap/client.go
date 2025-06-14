@@ -264,22 +264,51 @@ func buildVAEndpoints(customEndpoints *CustomEndpoints) map[string]string {
 
 // buildMPMEndpoints builds MPM endpoints map from custom configuration
 func buildMPMEndpoints(customEndpoints *CustomEndpoints) map[string]string {
-	// Default MPM endpoints
+	// Default MPM endpoints - Updated to match ASPI documentation
 	endpoints := map[string]string{
+		"generate-qr":     "/api/v1.0/qr/qr-mpm-generate",
+		"decode-qr":       "/api/v1.0/qr/qr-mpm-decode",
+		"apply-ott":       "/api/v1.0/qr/apply-ott",
+		"payment":         "/api/v1.0/qr/qr-mpm-payment",
+		"query-payment":   "/api/v1.0/qr/qr-mpm-query",
+		"notify-qr":       "/api/v1.0/qr/qr-mpm-notify",
+		"cancel-payment":  "/api/v1.0/qr/qr-mpm-cancel",
+		"refund":          "/api/v1.0/qr/qr-mpm-refund",
 		"transfer":        "/api/v1.0/transfer-kredit/mpm",
 		"inquiry":         "/api/v1.0/transfer-kredit/mpm/inquiry",
-		"status":          "/api/v1.0/transfer-kredit/mpm/status",
-		"refund":          "/api/v1.0/transfer-kredit/mpm/refund",
+		"status":          "/api/v1.0/qr/qr-mpm-status",
 		"balance-inquiry": "/api/v1.0/transfer-kredit/mpm/balance-inquiry",
 		"account-inquiry": "/api/v1.0/transfer-kredit/mpm/account-inquiry",
 		"history":         "/api/v1.0/transfer-kredit/mpm/history",
-		"generate-qr":     "/api/v1.0/qr/qr-mpm-generate",
-		"notify-qr":       "/api/v1.0/qr/qr-mpm-notify",
 	}
 
 	// Override with custom endpoints if provided
 	if customEndpoints != nil && customEndpoints.MPM != nil {
 		mpm := customEndpoints.MPM
+		if mpm.GenerateQR != "" {
+			endpoints["generate-qr"] = mpm.GenerateQR
+		}
+		if mpm.DecodeQR != "" {
+			endpoints["decode-qr"] = mpm.DecodeQR
+		}
+		if mpm.ApplyOTT != "" {
+			endpoints["apply-ott"] = mpm.ApplyOTT
+		}
+		if mpm.Payment != "" {
+			endpoints["payment"] = mpm.Payment
+		}
+		if mpm.QueryPayment != "" {
+			endpoints["query-payment"] = mpm.QueryPayment
+		}
+		if mpm.NotifyQR != "" {
+			endpoints["notify-qr"] = mpm.NotifyQR
+		}
+		if mpm.CancelPayment != "" {
+			endpoints["cancel-payment"] = mpm.CancelPayment
+		}
+		if mpm.Refund != "" {
+			endpoints["refund"] = mpm.Refund
+		}
 		if mpm.Transfer != "" {
 			endpoints["transfer"] = mpm.Transfer
 		}
@@ -289,9 +318,6 @@ func buildMPMEndpoints(customEndpoints *CustomEndpoints) map[string]string {
 		if mpm.Status != "" {
 			endpoints["status"] = mpm.Status
 		}
-		if mpm.Refund != "" {
-			endpoints["refund"] = mpm.Refund
-		}
 		if mpm.BalanceInquiry != "" {
 			endpoints["balance-inquiry"] = mpm.BalanceInquiry
 		}
@@ -300,12 +326,6 @@ func buildMPMEndpoints(customEndpoints *CustomEndpoints) map[string]string {
 		}
 		if mpm.History != "" {
 			endpoints["history"] = mpm.History
-		}
-		if mpm.GenerateQR != "" {
-			endpoints["generate-qr"] = mpm.GenerateQR
-		}
-		if mpm.NotifyQR != "" {
-			endpoints["notify-qr"] = mpm.NotifyQR
 		}
 	}
 
@@ -621,6 +641,21 @@ func mergeMPMEndpoints(user, bank *MPMEndpoints) {
 	}
 	if bank.GenerateQR != "" && user.GenerateQR == "" {
 		user.GenerateQR = bank.GenerateQR
+	}
+	if bank.DecodeQR != "" && user.DecodeQR == "" {
+		user.DecodeQR = bank.DecodeQR
+	}
+	if bank.ApplyOTT != "" && user.ApplyOTT == "" {
+		user.ApplyOTT = bank.ApplyOTT
+	}
+	if bank.Payment != "" && user.Payment == "" {
+		user.Payment = bank.Payment
+	}
+	if bank.QueryPayment != "" && user.QueryPayment == "" {
+		user.QueryPayment = bank.QueryPayment
+	}
+	if bank.CancelPayment != "" && user.CancelPayment == "" {
+		user.CancelPayment = bank.CancelPayment
 	}
 	if bank.NotifyQR != "" && user.NotifyQR == "" {
 		user.NotifyQR = bank.NotifyQR
