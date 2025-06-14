@@ -45,6 +45,21 @@ type CustomEndpoints struct {
 
 	// MPM endpoints
 	MPM *MPMEndpoints `json:"mpm,omitempty"`
+	
+	// Registration endpoints
+	Registration *RegistrationEndpoints `json:"registration,omitempty"`
+	
+	// Balance Inquiry endpoints
+	BalanceInquiry *BalanceInquiryEndpoints `json:"balanceInquiry,omitempty"`
+	
+	// Transaction History endpoints
+	TransactionHistory *TransactionHistoryEndpoints `json:"transactionHistory,omitempty"`
+	
+	// Transfer Credit endpoints
+	TransferCredit *TransferCreditEndpoints `json:"transferCredit,omitempty"`
+	
+	// Transfer Debit endpoints
+	TransferDebit *TransferDebitEndpoints `json:"transferDebit,omitempty"`
 }
 
 // VirtualAccountEndpoints defines custom VA endpoints
@@ -71,6 +86,54 @@ type MPMEndpoints struct {
 	History        string `json:"history,omitempty"`
 	GenerateQR     string `json:"generateQR,omitempty"`
 	NotifyQR       string `json:"notifyQR,omitempty"`
+}
+
+// RegistrationEndpoints defines custom Registration endpoints
+type RegistrationEndpoints struct {
+	Register     string `json:"register,omitempty"`
+	RegisterCard string `json:"registerCard,omitempty"`
+	BindAccount  string `json:"bindAccount,omitempty"`
+	VerifyOTP    string `json:"verifyOTP,omitempty"`
+}
+
+// BalanceInquiryEndpoints defines custom Balance Inquiry endpoints
+type BalanceInquiryEndpoints struct {
+	BalanceInquiry string `json:"balanceInquiry,omitempty"`
+}
+
+// TransactionHistoryEndpoints defines custom Transaction History endpoints
+type TransactionHistoryEndpoints struct {
+	TransactionHistoryList   string `json:"transactionHistoryList,omitempty"`
+	TransactionHistoryDetail string `json:"transactionHistoryDetail,omitempty"`
+	BankStatement            string `json:"bankStatement,omitempty"`
+}
+
+// TransferCreditEndpoints defines custom Transfer Credit endpoints
+type TransferCreditEndpoints struct {
+	AccountInquiry        string `json:"accountInquiry,omitempty"`
+	TriggerTransfer       string `json:"triggerTransfer,omitempty"`
+	TransferStatus        string `json:"transferStatus,omitempty"`
+	CustomerTopUp         string `json:"customerTopUp,omitempty"`
+	BulkCashin            string `json:"bulkCashin,omitempty"`
+	TransferToBank        string `json:"transferToBank,omitempty"`
+	TransferToOTC         string `json:"transferToOTC,omitempty"`
+	TransferToOTCStatus   string `json:"transferToOTCStatus,omitempty"`
+	TransferToOTCCancel   string `json:"transferToOTCCancel,omitempty"`
+}
+
+// TransferDebitEndpoints defines custom Transfer Debit endpoints
+type TransferDebitEndpoints struct {
+	DirectDebitPayment       string `json:"directDebitPayment,omitempty"`
+	DirectDebitStatus        string `json:"directDebitStatus,omitempty"`
+	DirectDebitCancel        string `json:"directDebitCancel,omitempty"`
+	DirectDebitRefund        string `json:"directDebitRefund,omitempty"`
+	CPMGenerateQR            string `json:"cpmGenerateQR,omitempty"`
+	CPMPayment               string `json:"cpmPayment,omitempty"`
+	AuthPayment              string `json:"authPayment,omitempty"`
+	AuthCapture              string `json:"authCapture,omitempty"`
+	AuthVoid                 string `json:"authVoid,omitempty"`
+	DirectDebitBIFAST        string `json:"directDebitBIFAST,omitempty"`
+	DirectDebitBIFASTPayment string `json:"directDebitBIFASTPayment,omitempty"`
 }
 
 // BankPresets provides predefined configurations for different banks
@@ -124,6 +187,28 @@ func (bp *BankPresets) getBCAEndpoints() *CustomEndpoints {
 			GenerateQR:     "/api/v1.0/bca/qr/qr-mpm-generate",
 			NotifyQR:       "/api/v1.0/bca/qr/qr-mpm-notify",
 		},
+		BalanceInquiry: &BalanceInquiryEndpoints{
+			BalanceInquiry: "/api/v1.0/bca/balance-inquiry",
+		},
+		TransactionHistory: &TransactionHistoryEndpoints{
+			TransactionHistoryList:   "/api/v1.0/bca/transaction-history-list",
+			TransactionHistoryDetail: "/api/v1.0/bca/transaction-history-detail",
+			BankStatement:            "/api/v1.0/bca/bank-statement",
+		},
+		TransferCredit: &TransferCreditEndpoints{
+			AccountInquiry:  "/api/v1.0/bca/account-inquiry-external",
+			TriggerTransfer: "/api/v1.0/bca/trigger-transfer",
+			TransferStatus:  "/api/v1.0/bca/transfer/status",
+		},
+		TransferDebit: &TransferDebitEndpoints{
+			DirectDebitPayment: "/api/v1.0/bca/debit/payment-host-to-host",
+			DirectDebitStatus:  "/api/v1.0/bca/debit/status",
+			DirectDebitCancel:  "/api/v1.0/bca/debit/cancel",
+			DirectDebitRefund:  "/api/v1.0/bca/debit/refund",
+			AuthPayment:        "/api/v1.0/bca/auth/payment",
+			AuthCapture:        "/api/v1.0/bca/auth/capture",
+			AuthVoid:           "/api/v1.0/bca/auth/void",
+		},
 	}
 }
 
@@ -152,6 +237,28 @@ func (bp *BankPresets) getBNIEndpoints() *CustomEndpoints {
 			History:        "/api/v1.0/bni/mpm/history",
 			GenerateQR:     "/api/v1.0/bni/qr/generate",
 			NotifyQR:       "/api/v1.0/bni/qr/notify",
+		},
+		BalanceInquiry: &BalanceInquiryEndpoints{
+			BalanceInquiry: "/api/v1.0/bni/balance-inquiry",
+		},
+		TransactionHistory: &TransactionHistoryEndpoints{
+			TransactionHistoryList:   "/api/v1.0/bni/transaction-history-list",
+			TransactionHistoryDetail: "/api/v1.0/bni/transaction-history-detail",
+			BankStatement:            "/api/v1.0/bni/bank-statement",
+		},
+		TransferCredit: &TransferCreditEndpoints{
+			AccountInquiry:  "/api/v1.0/bni/account-inquiry-external",
+			TriggerTransfer: "/api/v1.0/bni/trigger-transfer",
+			TransferStatus:  "/api/v1.0/bni/transfer/status",
+		},
+		TransferDebit: &TransferDebitEndpoints{
+			DirectDebitPayment: "/api/v1.0/bni/debit/payment-host-to-host",
+			DirectDebitStatus:  "/api/v1.0/bni/debit/status",
+			DirectDebitCancel:  "/api/v1.0/bni/debit/cancel",
+			DirectDebitRefund:  "/api/v1.0/bni/debit/refund",
+			AuthPayment:        "/api/v1.0/bni/auth/payment",
+			AuthCapture:        "/api/v1.0/bni/auth/capture",
+			AuthVoid:           "/api/v1.0/bni/auth/void",
 		},
 	}
 }
@@ -182,6 +289,28 @@ func (bp *BankPresets) getBRIEndpoints() *CustomEndpoints {
 			GenerateQR:     "/api/v1.0/bri/qr-mpm/generate",
 			NotifyQR:       "/api/v1.0/bri/qr-mpm/notify",
 		},
+		BalanceInquiry: &BalanceInquiryEndpoints{
+			BalanceInquiry: "/api/v1.0/bri/balance-inquiry",
+		},
+		TransactionHistory: &TransactionHistoryEndpoints{
+			TransactionHistoryList:   "/api/v1.0/bri/transaction-history-list",
+			TransactionHistoryDetail: "/api/v1.0/bri/transaction-history-detail",
+			BankStatement:            "/api/v1.0/bri/bank-statement",
+		},
+		TransferCredit: &TransferCreditEndpoints{
+			AccountInquiry:  "/api/v1.0/bri/account-inquiry-external",
+			TriggerTransfer: "/api/v1.0/bri/trigger-transfer",
+			TransferStatus:  "/api/v1.0/bri/transfer/status",
+		},
+		TransferDebit: &TransferDebitEndpoints{
+			DirectDebitPayment: "/api/v1.0/bri/debit/payment-host-to-host",
+			DirectDebitStatus:  "/api/v1.0/bri/debit/status",
+			DirectDebitCancel:  "/api/v1.0/bri/debit/cancel",
+			DirectDebitRefund:  "/api/v1.0/bri/debit/refund",
+			AuthPayment:        "/api/v1.0/bri/auth/payment",
+			AuthCapture:        "/api/v1.0/bri/auth/capture",
+			AuthVoid:           "/api/v1.0/bri/auth/void",
+		},
 	}
 }
 
@@ -210,6 +339,28 @@ func (bp *BankPresets) getMandiriEndpoints() *CustomEndpoints {
 			History:        "/api/v1.0/mandiri/transfer-kredit/mpm/history",
 			GenerateQR:     "/api/v1.0/mandiri/qr/qr-mpm-generate",
 			NotifyQR:       "/api/v1.0/mandiri/qr/qr-mpm-notify",
+		},
+		BalanceInquiry: &BalanceInquiryEndpoints{
+			BalanceInquiry: "/api/v1.0/mandiri/balance-inquiry",
+		},
+		TransactionHistory: &TransactionHistoryEndpoints{
+			TransactionHistoryList:   "/api/v1.0/mandiri/transaction-history-list",
+			TransactionHistoryDetail: "/api/v1.0/mandiri/transaction-history-detail",
+			BankStatement:            "/api/v1.0/mandiri/bank-statement",
+		},
+		TransferCredit: &TransferCreditEndpoints{
+			AccountInquiry:  "/api/v1.0/mandiri/account-inquiry-external",
+			TriggerTransfer: "/api/v1.0/mandiri/trigger-transfer",
+			TransferStatus:  "/api/v1.0/mandiri/transfer/status",
+		},
+		TransferDebit: &TransferDebitEndpoints{
+			DirectDebitPayment: "/api/v1.0/mandiri/debit/payment-host-to-host",
+			DirectDebitStatus:  "/api/v1.0/mandiri/debit/status",
+			DirectDebitCancel:  "/api/v1.0/mandiri/debit/cancel",
+			DirectDebitRefund:  "/api/v1.0/mandiri/debit/refund",
+			AuthPayment:        "/api/v1.0/mandiri/auth/payment",
+			AuthCapture:        "/api/v1.0/mandiri/auth/capture",
+			AuthVoid:           "/api/v1.0/mandiri/auth/void",
 		},
 	}
 }
@@ -240,6 +391,28 @@ func (bp *BankPresets) getCIMBEndpoints() *CustomEndpoints {
 			GenerateQR:     "/api/v1.0/cimb/qr/generate",
 			NotifyQR:       "/api/v1.0/cimb/qr/notify",
 		},
+		BalanceInquiry: &BalanceInquiryEndpoints{
+			BalanceInquiry: "/api/v1.0/cimb/balance-inquiry",
+		},
+		TransactionHistory: &TransactionHistoryEndpoints{
+			TransactionHistoryList:   "/api/v1.0/cimb/transaction-history-list",
+			TransactionHistoryDetail: "/api/v1.0/cimb/transaction-history-detail",
+			BankStatement:            "/api/v1.0/cimb/bank-statement",
+		},
+		TransferCredit: &TransferCreditEndpoints{
+			AccountInquiry:  "/api/v1.0/cimb/account-inquiry-external",
+			TriggerTransfer: "/api/v1.0/cimb/trigger-transfer",
+			TransferStatus:  "/api/v1.0/cimb/transfer/status",
+		},
+		TransferDebit: &TransferDebitEndpoints{
+			DirectDebitPayment: "/api/v1.0/cimb/debit/payment-host-to-host",
+			DirectDebitStatus:  "/api/v1.0/cimb/debit/status",
+			DirectDebitCancel:  "/api/v1.0/cimb/debit/cancel",
+			DirectDebitRefund:  "/api/v1.0/cimb/debit/refund",
+			AuthPayment:        "/api/v1.0/cimb/auth/payment",
+			AuthCapture:        "/api/v1.0/cimb/auth/capture",
+			AuthVoid:           "/api/v1.0/cimb/auth/void",
+		},
 	}
 }
 
@@ -268,6 +441,28 @@ func (bp *BankPresets) getPermataEndpoints() *CustomEndpoints {
 			History:        "/api/v1.0/permata/mpm/history",
 			GenerateQR:     "/api/v1.0/permata/qr/generate",
 			NotifyQR:       "/api/v1.0/permata/qr/notify",
+		},
+		BalanceInquiry: &BalanceInquiryEndpoints{
+			BalanceInquiry: "/api/v1.0/permata/balance-inquiry",
+		},
+		TransactionHistory: &TransactionHistoryEndpoints{
+			TransactionHistoryList:   "/api/v1.0/permata/transaction-history-list",
+			TransactionHistoryDetail: "/api/v1.0/permata/transaction-history-detail",
+			BankStatement:            "/api/v1.0/permata/bank-statement",
+		},
+		TransferCredit: &TransferCreditEndpoints{
+			AccountInquiry:  "/api/v1.0/permata/account-inquiry-external",
+			TriggerTransfer: "/api/v1.0/permata/trigger-transfer",
+			TransferStatus:  "/api/v1.0/permata/transfer/status",
+		},
+		TransferDebit: &TransferDebitEndpoints{
+			DirectDebitPayment: "/api/v1.0/permata/debit/payment-host-to-host",
+			DirectDebitStatus:  "/api/v1.0/permata/debit/status",
+			DirectDebitCancel:  "/api/v1.0/permata/debit/cancel",
+			DirectDebitRefund:  "/api/v1.0/permata/debit/refund",
+			AuthPayment:        "/api/v1.0/permata/auth/payment",
+			AuthCapture:        "/api/v1.0/permata/auth/capture",
+			AuthVoid:           "/api/v1.0/permata/auth/void",
 		},
 	}
 }

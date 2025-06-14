@@ -1,6 +1,6 @@
 # SNAP ASPI Go SDK
 
-A production-ready Go SDK for integrating with Indonesia's ASPI (Payment System Administration) services. This SDK provides a clean, type-safe interface for Virtual Account and MPM (Merchant Payment Management) operations.
+A comprehensive, production-ready Go SDK for integrating with Indonesia's ASPI (Payment System Administration) services. This SDK provides a clean, type-safe interface for all ASPI endpoints including Virtual Account, MPM, Registration, Balance Inquiry, Transaction History, Transfer Credit, and Transfer Debit operations.
 
 ## 🚀 Quick Start
 
@@ -67,6 +67,11 @@ func main() {
 - **💳 Virtual Accounts**: Complete VA lifecycle management
 - **🏪 MPM Operations**: Merchant payment management and transfers
 - **📱 QR Codes**: Dynamic QR code generation and notifications
+- **👤 Registration**: User registration, card registration, and account binding
+- **💰 Balance Inquiry**: Account balance information
+- **📊 Transaction History**: Transaction history and bank statements
+- **💸 Transfer Credit**: Account inquiry, transfers, and top-ups
+- **💳 Transfer Debit**: Direct debit, CPM, auth payment, and BI-FAST
 - **🔄 Auto-retry**: Built-in retry logic with exponential backoff
 - **🚀 Performance**: Connection pooling and request optimization
 - **🛡️ Security**: RSA signature validation and secure communication
@@ -85,8 +90,12 @@ func main() {
 ├─────────────────┤
 │ • VirtualAccount│
 │ • MPM           │
+│ • Registration  │
+│ • BalanceInquiry│
+│ • TxHistory     │
+│ • TransferCredit│
+│ • TransferDebit │
 │ • Auth          │
-│ • QR            │
 └─────────┬───────┘
           │
 ┌─────────▼───────┐
@@ -126,7 +135,81 @@ config := snap.Config{
 
 ## 🎯 Use Cases
 
-### Virtual Account Operations
+### Registration
+
+```go
+// User Registration
+result, err := client.Registration().Register(ctx, &types.RegistrationPayload{...})
+
+// Card Registration
+result, err := client.Registration().RegisterCard(ctx, &types.CardRegistrationPayload{...})
+
+// Account Binding
+result, err := client.Registration().BindAccount(ctx, &types.AccountBindingPayload{...})
+
+// OTP Verification
+result, err := client.Registration().VerifyOTP(ctx, &types.OTPVerificationPayload{...})
+```
+
+### Balance Inquiry
+
+```go
+// Check Balance
+balance, err := client.BalanceInquiry().BalanceInquiry(ctx, &types.BalanceInquiryPayload{...})
+```
+
+### Transaction History
+
+```go
+// Get Transaction History List
+history, err := client.TransactionHistory().TransactionHistoryList(ctx, &types.TransactionHistoryListPayload{...})
+
+// Get Transaction History Detail
+detail, err := client.TransactionHistory().TransactionHistoryDetail(ctx, &types.TransactionHistoryDetailPayload{...})
+
+// Get Bank Statement
+statement, err := client.TransactionHistory().BankStatement(ctx, &types.BankStatementPayload{...})
+```
+
+### Transfer Credit
+
+```go
+// Account Inquiry
+inquiry, err := client.TransferCredit().AccountInquiry(ctx, &types.AccountInquiryPayload{...})
+
+// Trigger Transfer
+transfer, err := client.TransferCredit().TriggerTransfer(ctx, &types.TriggerTransferPayload{...})
+
+// Customer Top Up
+topup, err := client.TransferCredit().CustomerTopUp(ctx, &types.CustomerTopUpPayload{...})
+
+// Bulk Cashin
+bulk, err := client.TransferCredit().BulkCashin(ctx, &types.BulkCashinPayload{...})
+
+// Transfer To Bank
+bank, err := client.TransferCredit().TransferToBank(ctx, &types.TransferToBankPayload{...})
+
+// Transfer To OTC
+otc, err := client.TransferCredit().TransferToOTC(ctx, &types.TransferToOTCPayload{...})
+```
+
+### Transfer Debit
+
+```go
+// Direct Debit Payment
+debit, err := client.TransferDebit().DirectDebitPayment(ctx, &types.DirectDebitPaymentPayload{...})
+
+// CPM Generate QR
+qr, err := client.TransferDebit().CPMGenerateQR(ctx, &types.CPMGenerateQRPayload{...})
+
+// Auth Payment
+auth, err := client.TransferDebit().AuthPayment(ctx, &types.AuthPaymentPayload{...})
+
+// Direct Debit BI-FAST
+bifast, err := client.TransferDebit().DirectDebitBIFAST(ctx, &types.DirectDebitBIFASTPayload{...})
+```
+
+### Virtual Account
 
 ```go
 // Create Virtual Account
@@ -212,6 +295,21 @@ customEndpoints := &snap.CustomEndpoints{
         Transfer:   "/api/v2.0/custom-bank/mpm/transfer",
         GenerateQR: "/api/v2.0/custom-bank/qr/generate",
     },
+    Registration: &snap.RegistrationEndpoints{
+        Register: "/api/v2.0/custom-bank/registration/register",
+    },
+    BalanceInquiry: &snap.BalanceInquiryEndpoints{
+        BalanceInquiry: "/api/v2.0/custom-bank/balance-inquiry",
+    },
+    TransactionHistory: &snap.TransactionHistoryEndpoints{
+        TransactionHistoryList: "/api/v2.0/custom-bank/transaction-history-list",
+    },
+    TransferCredit: &snap.TransferCreditEndpoints{
+        AccountInquiry: "/api/v2.0/custom-bank/account-inquiry",
+    },
+    TransferDebit: &snap.TransferDebitEndpoints{
+        DirectDebitPayment: "/api/v2.0/custom-bank/direct-debit-payment",
+    },
 }
 
 client, err := snap.NewClient(snap.Config{
@@ -273,116 +371,12 @@ BaseURL: "https://api.aspi-indonesia.or.id"
 
 ## 📝 Examples
 
-### Complete Example
+Check out the `examples` directory for complete examples of using the SDK:
 
-```go
-package main
-
-import (
-    "context"
-    "log"
-    "os"
-    
-    "github.com/mseptiaan/snap-aspi-go/pkg/snap"
-    "github.com/mseptiaan/snap-aspi-go/pkg/types"
-)
-
-func main() {
-    // Initialize client
-    client, err := snap.NewClient(snap.Config{
-        BaseURL:        os.Getenv("ASPI_BASE_URL"),
-        ClientID:       os.Getenv("ASPI_CLIENT_ID"),
-        ClientSecret:   os.Getenv("ASPI_CLIENT_SECRET"),
-        PrivateKeyPath: os.Getenv("ASPI_PRIVATE_KEY_PATH"),
-        PublicKeyPath:  os.Getenv("ASPI_PUBLIC_KEY_PATH"),
-        Environment:    "sandbox",
-        LogLevel:       "info",
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    ctx := context.Background()
-
-    // Example: Create Virtual Account
-    createVA(ctx, client)
-    
-    // Example: MPM Transfer
-    mpmTransfer(ctx, client)
-    
-    // Example: Generate QR Code
-    generateQR(ctx, client)
-}
-
-func createVA(ctx context.Context, client *snap.Client) {
-    result, err := client.VirtualAccount().CreateVA(ctx, &types.CreateVAPayload{
-        PartnerServiceId:   "12345",
-        CustomerNo:         "CUST001",
-        VirtualAccountNo:   "8808001234567890",
-        VirtualAccountName: "John Doe",
-        VirtualAccountEmail: "john@example.com",
-        VirtualAccountPhone: "081234567890",
-        TrxId:              "TRX-001",
-        TotalAmount:        types.NewAmount(100000, "IDR"),
-        ExpiredDate:        "2024-12-31T23:59:59+07:00",
-        AdditionalInfo: &types.AdditionalInfo{
-            DeviceId: "DEVICE001",
-            Channel:  "WEB",
-        },
-    })
-    if err != nil {
-        log.Printf("Create VA Error: %v", err)
-        return
-    }
-    log.Printf("VA Created: %+v", result)
-}
-
-func mpmTransfer(ctx context.Context, client *snap.Client) {
-    result, err := client.MPM().Transfer(ctx, &types.MPMTransferPayload{
-        PartnerServiceId:      "12345",
-        CustomerNo:            "CUST001",
-        PartnerReferenceNo:    "REF001",
-        MerchantId:            "MERCHANT001",
-        Amount:                types.NewAmount(50000, "IDR"),
-        BeneficiaryAccountNo:  "1234567890",
-        BeneficiaryName:       "Jane Doe",
-        Currency:              "IDR",
-        TransactionDate:       "2024-01-15T10:30:00+07:00",
-        AdditionalInfo: &types.AdditionalInfo{
-            DeviceId: "DEVICE001",
-            Channel:  "MOBILE",
-        },
-    })
-    if err != nil {
-        log.Printf("MPM Transfer Error: %v", err)
-        return
-    }
-    log.Printf("Transfer Result: %+v", result)
-}
-
-func generateQR(ctx context.Context, client *snap.Client) {
-    result, err := client.MPM().GenerateQR(ctx, &types.MPMGenerateQRPayload{
-        PartnerServiceId:   "12345",
-        CustomerNo:         "CUST001",
-        PartnerReferenceNo: "QR001",
-        MerchantId:         "MERCHANT001",
-        Amount:             types.NewAmount(25000, "IDR"),
-        MerchantName:       "Test Merchant",
-        MerchantCity:       "Jakarta",
-        QRType:             "DYNAMIC",
-        ValidityPeriod:     "3600",
-        AdditionalInfo: &types.AdditionalInfo{
-            DeviceId: "DEVICE001",
-            Channel:  "POS",
-        },
-    })
-    if err != nil {
-        log.Printf("Generate QR Error: %v", err)
-        return
-    }
-    log.Printf("QR Generated: %s", result.QRContent)
-}
-```
+- `examples/basic/main.go`: Basic usage examples
+- `examples/multi_bank/main.go`: Multi-bank integration examples
+- `examples/custom_endpoints/main.go`: Custom endpoint configuration examples
+- `examples/complete/main.go`: Comprehensive examples of all features
 
 ## 🤝 Contributing
 
@@ -400,7 +394,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Issues**: [GitHub Issues](https://github.com/mseptiaan/snap-aspi-go/issues)
 - **Documentation**: This README and code comments
-- **Examples**: See examples in this README
+- **Examples**: See examples in this README and the `examples` directory
 
 ---
 
