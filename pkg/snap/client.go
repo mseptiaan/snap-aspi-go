@@ -5,46 +5,20 @@ import (
 	"fmt"
 
 	"github.com/mseptiaan/snap-aspi-go/internal/auth"
-	"github.com/mseptiaan/snap-aspi-go/internal/config"
 	"github.com/mseptiaan/snap-aspi-go/internal/logging"
 	"github.com/mseptiaan/snap-aspi-go/pkg/client"
 	"github.com/mseptiaan/snap-aspi-go/pkg/contracts"
 	"github.com/mseptiaan/snap-aspi-go/pkg/services"
-	"github.com/mseptiaan/snap-aspi-go/pkg/types"
 )
 
 // Client represents the main SNAP ASPI SDK client
 type Client struct {
-	config              *config.Config
+	config              *Config
 	logger              logging.Logger
 	httpClient          contracts.HTTPClient
 	authManager         *auth.AccessTokenManager
 	virtualAccountSvc   *services.VirtualAccountService
 	mpmSvc              *services.MPMService
-}
-
-// Config represents the SDK configuration
-type Config struct {
-	// ASPI API Configuration
-	BaseURL        string `json:"baseUrl"`
-	ClientID       string `json:"clientId"`
-	ClientSecret   string `json:"clientSecret"`
-	PrivateKeyPath string `json:"privateKeyPath"`
-	PublicKeyPath  string `json:"publicKeyPath"`
-	
-	// Optional: Environment (sandbox/production)
-	Environment string `json:"environment,omitempty"`
-	
-	// Optional: Timeout configurations
-	ConnectTimeout int `json:"connectTimeout,omitempty"` // seconds
-	RequestTimeout int `json:"requestTimeout,omitempty"` // seconds
-	
-	// Optional: Retry configurations
-	MaxRetries      int `json:"maxRetries,omitempty"`
-	BackoffDuration int `json:"backoffDuration,omitempty"` // seconds
-	
-	// Optional: Logging
-	LogLevel string `json:"logLevel,omitempty"` // debug, info, warn, error
 }
 
 // NewClient creates a new SNAP ASPI SDK client
@@ -69,26 +43,57 @@ func NewClient(cfg Config) (*Client, error) {
 		return nil, fmt.Errorf("failed to initialize auth manager: %w", err)
 	}
 
-	// Initialize Virtual Account service
-	vaService, err := services.NewVirtualAccountService(httpClient, authManager, internalConfig, logger)
+	// Initialize Virtual Account service with custom endpoints
+	vaService, err := services.NewVirtualAccountServiceWithEndpoints(
+		httpClient, 
+		authManager, 
+		internalConfig, 
+		logger,
+		buildVAEndpoints(cfg.CustomEndpoints),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize Virtual Account service: %w", err)
 	}
 
-	// Initialize MPM service
-	mpmService, err := services.NewMPMService(httpClient, authManager, internalConfig, logger)
+	// Initialize MPM service with custom endpoints
+	mpmService, err := services.NewMPMServiceWithEndpoints(
+		httpClient, 
+		authManager, 
+		internalConfig, 
+		logger,
+		buildMPMEndpoints(cfg.CustomEndpoints),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize MPM service: %w", err)
 	}
 
 	return &Client{
-		config:            internalConfig,
+		config:            &cfg,
 		logger:            logger,
 		httpClient:        httpClient,
 		authManager:       authManager,
 		virtualAccountSvc: vaService,
 		mpmSvc:            mpmService,
 	}, nil
+}
+
+// NewClientForBank creates a new client with predefined bank configuration
+func NewClientForBank(cfg Config, bankCode string) (*Client, error) {
+	// Get bank-specific endpoints
+	bankPresets := &BankPresets{}
+	bankEndpoints := bankPresets.GetBankConfig(bankCode)
+	
+	if bankEndpoints != nil {
+		// Merge bank endpoints with user config
+		if cfg.CustomEndpoints == nil {
+			cfg.CustomEndpoints = bankEndpoints
+		} else {
+			// Merge configurations (user config takes precedence)
+			mergeEndpoints(cfg.CustomEndpoints, bankEndpoints)
+		}
+	}
+
+	return NewClient(cfg)
 }
 
 // VirtualAccount returns the Virtual Account service
@@ -106,85 +111,197 @@ func (c *Client) Auth() AuthService {
 	return &authService{manager: c.authManager}
 }
 
-// validateConfig validates the SDK configuration
-func validateConfig(cfg Config) error {
-	if cfg.BaseURL == "" {
-		return fmt.Errorf("baseUrl is required")
-	}
-	if cfg.ClientID == "" {
-		return fmt.Errorf("clientId is required")
-	}
-	if cfg.ClientSecret == "" {
-		return fmt.Errorf("clientSecret is required")
-	}
-	if cfg.PrivateKeyPath == "" {
-		return fmt.Errorf("privateKeyPath is required")
-	}
-	return nil
+// GetConfig returns the current client configuration
+func (c *Client) GetConfig() *Config {
+	return c.config
 }
 
-// convertToInternalConfig converts SDK config to internal config format
-func convertToInternalConfig(cfg Config) *config.Config {
-	// Set defaults
-	environment := cfg.Environment
-	if environment == "" {
-		environment = "sandbox"
-	}
-	
-	connectTimeout := cfg.ConnectTimeout
-	if connectTimeout == 0 {
-		connectTimeout = 10
-	}
-	
-	requestTimeout := cfg.RequestTimeout
-	if requestTimeout == 0 {
-		requestTimeout = 30
-	}
-	
-	maxRetries := cfg.MaxRetries
-	if maxRetries == 0 {
-		maxRetries = 3
-	}
-	
-	backoffDuration := cfg.BackoffDuration
-	if backoffDuration == 0 {
-		backoffDuration = 1
-	}
-	
-	logLevel := cfg.LogLevel
-	if logLevel == "" {
-		logLevel = "info"
+// Helper functions
+
+// buildVAEndpoints builds VA endpoints map from custom configuration
+func buildVAEndpoints(customEndpoints *CustomEndpoints) map[string]string {
+	// Default VA endpoints
+	endpoints := map[string]string{
+		"inquiry":       "/api/v1.0/transfer-va/inquiry",
+		"inquiry-va":    "/api/v1.0/transfer-va/inquiry-va",
+		"create-va":     "/api/v1.0/transfer-va/create-va",
+		"update-va":     "/api/v1.0/transfer-va/update-va",
+		"delete-va":     "/api/v1.0/transfer-va/delete-va",
+		"payment":       "/api/v1.0/transfer-va/payment",
+		"status":        "/api/v1.0/transfer-va/status",
+		"report":        "/api/v1.0/transfer-va/report",
+		"update-status": "/api/v1.0/transfer-va/update-status",
 	}
 
-	return &config.Config{
-		App: config.AppConfig{
-			Name:        "snap-aspi-sdk",
-			Version:     "1.0.0",
-			Environment: environment,
-		},
-		ASPI: config.ASPIConfig{
-			BaseURL:        cfg.BaseURL,
-			ClientID:       cfg.ClientID,
-			ClientSecret:   cfg.ClientSecret,
-			PrivateKeyPath: cfg.PrivateKeyPath,
-			PublicKeyPath:  cfg.PublicKeyPath,
-			Endpoints: config.EndpointsConfig{
-				B2BToken:   "/api/v1.0/access-token/b2b",
-				B2B2CToken: "/api/v1.0/access-token/b2b2c",
-			},
-			Timeouts: config.TimeoutsConfig{
-				ConnectTimeout: fmt.Sprintf("%ds", connectTimeout),
-				RequestTimeout: fmt.Sprintf("%ds", requestTimeout),
-			},
-			Retry: config.RetryConfig{
-				MaxAttempts:     maxRetries,
-				BackoffDuration: fmt.Sprintf("%ds", backoffDuration),
-			},
-		},
-		Logger: config.LoggerConfig{
-			Level:  logLevel,
-			Format: "json",
-			Output: "stdout",
-		},
+	// Override with custom endpoints if provided
+	if customEndpoints != nil && customEndpoints.VirtualAccount != nil {
+		va := customEndpoints.VirtualAccount
+		if va.Inquiry != "" {
+			endpoints["inquiry"] = va.Inquiry
+		}
+		if va.InquiryVA != "" {
+			endpoints["inquiry-va"] = va.InquiryVA
+		}
+		if va.CreateVA != "" {
+			endpoints["create-va"] = va.CreateVA
+		}
+		if va.UpdateVA != "" {
+			endpoints["update-va"] = va.UpdateVA
+		}
+		if va.DeleteVA != "" {
+			endpoints["delete-va"] = va.DeleteVA
+		}
+		if va.Payment != "" {
+			endpoints["payment"] = va.Payment
+		}
+		if va.Status != "" {
+			endpoints["status"] = va.Status
+		}
+		if va.Report != "" {
+			endpoints["report"] = va.Report
+		}
+		if va.UpdateStatus != "" {
+			endpoints["update-status"] = va.UpdateStatus
+		}
+	}
+
+	return endpoints
+}
+
+// buildMPMEndpoints builds MPM endpoints map from custom configuration
+func buildMPMEndpoints(customEndpoints *CustomEndpoints) map[string]string {
+	// Default MPM endpoints
+	endpoints := map[string]string{
+		"transfer":        "/api/v1.0/transfer-kredit/mpm",
+		"inquiry":         "/api/v1.0/transfer-kredit/mpm/inquiry",
+		"status":          "/api/v1.0/transfer-kredit/mpm/status",
+		"refund":          "/api/v1.0/transfer-kredit/mpm/refund",
+		"balance-inquiry": "/api/v1.0/transfer-kredit/mpm/balance-inquiry",
+		"account-inquiry": "/api/v1.0/transfer-kredit/mpm/account-inquiry",
+		"history":         "/api/v1.0/transfer-kredit/mpm/history",
+		"generate-qr":     "/api/v1.0/qr/qr-mpm-generate",
+		"notify-qr":       "/api/v1.0/qr/qr-mpm-notify",
+	}
+
+	// Override with custom endpoints if provided
+	if customEndpoints != nil && customEndpoints.MPM != nil {
+		mpm := customEndpoints.MPM
+		if mpm.Transfer != "" {
+			endpoints["transfer"] = mpm.Transfer
+		}
+		if mpm.Inquiry != "" {
+			endpoints["inquiry"] = mpm.Inquiry
+		}
+		if mpm.Status != "" {
+			endpoints["status"] = mpm.Status
+		}
+		if mpm.Refund != "" {
+			endpoints["refund"] = mpm.Refund
+		}
+		if mpm.BalanceInquiry != "" {
+			endpoints["balance-inquiry"] = mpm.BalanceInquiry
+		}
+		if mpm.AccountInquiry != "" {
+			endpoints["account-inquiry"] = mpm.AccountInquiry
+		}
+		if mpm.History != "" {
+			endpoints["history"] = mpm.History
+		}
+		if mpm.GenerateQR != "" {
+			endpoints["generate-qr"] = mpm.GenerateQR
+		}
+		if mpm.NotifyQR != "" {
+			endpoints["notify-qr"] = mpm.NotifyQR
+		}
+	}
+
+	return endpoints
+}
+
+// mergeEndpoints merges bank endpoints with user endpoints (user takes precedence)
+func mergeEndpoints(userEndpoints, bankEndpoints *CustomEndpoints) {
+	if bankEndpoints.B2BToken != "" && userEndpoints.B2BToken == "" {
+		userEndpoints.B2BToken = bankEndpoints.B2BToken
+	}
+	if bankEndpoints.B2B2CToken != "" && userEndpoints.B2B2CToken == "" {
+		userEndpoints.B2B2CToken = bankEndpoints.B2B2CToken
+	}
+
+	// Merge VA endpoints
+	if bankEndpoints.VirtualAccount != nil {
+		if userEndpoints.VirtualAccount == nil {
+			userEndpoints.VirtualAccount = bankEndpoints.VirtualAccount
+		} else {
+			mergeVAEndpoints(userEndpoints.VirtualAccount, bankEndpoints.VirtualAccount)
+		}
+	}
+
+	// Merge MPM endpoints
+	if bankEndpoints.MPM != nil {
+		if userEndpoints.MPM == nil {
+			userEndpoints.MPM = bankEndpoints.MPM
+		} else {
+			mergeMPMEndpoints(userEndpoints.MPM, bankEndpoints.MPM)
+		}
+	}
+}
+
+func mergeVAEndpoints(user, bank *VirtualAccountEndpoints) {
+	if bank.CreateVA != "" && user.CreateVA == "" {
+		user.CreateVA = bank.CreateVA
+	}
+	if bank.UpdateVA != "" && user.UpdateVA == "" {
+		user.UpdateVA = bank.UpdateVA
+	}
+	if bank.DeleteVA != "" && user.DeleteVA == "" {
+		user.DeleteVA = bank.DeleteVA
+	}
+	if bank.InquiryVA != "" && user.InquiryVA == "" {
+		user.InquiryVA = bank.InquiryVA
+	}
+	if bank.Inquiry != "" && user.Inquiry == "" {
+		user.Inquiry = bank.Inquiry
+	}
+	if bank.Payment != "" && user.Payment == "" {
+		user.Payment = bank.Payment
+	}
+	if bank.Status != "" && user.Status == "" {
+		user.Status = bank.Status
+	}
+	if bank.Report != "" && user.Report == "" {
+		user.Report = bank.Report
+	}
+	if bank.UpdateStatus != "" && user.UpdateStatus == "" {
+		user.UpdateStatus = bank.UpdateStatus
+	}
+}
+
+func mergeMPMEndpoints(user, bank *MPMEndpoints) {
+	if bank.Transfer != "" && user.Transfer == "" {
+		user.Transfer = bank.Transfer
+	}
+	if bank.Inquiry != "" && user.Inquiry == "" {
+		user.Inquiry = bank.Inquiry
+	}
+	if bank.Status != "" && user.Status == "" {
+		user.Status = bank.Status
+	}
+	if bank.Refund != "" && user.Refund == "" {
+		user.Refund = bank.Refund
+	}
+	if bank.BalanceInquiry != "" && user.BalanceInquiry == "" {
+		user.BalanceInquiry = bank.BalanceInquiry
+	}
+	if bank.AccountInquiry != "" && user.AccountInquiry == "" {
+		user.AccountInquiry = bank.AccountInquiry
+	}
+	if bank.History != "" && user.History == "" {
+		user.History = bank.History
+	}
+	if bank.GenerateQR != "" && user.GenerateQR == "" {
+		user.GenerateQR = bank.GenerateQR
+	}
+	if bank.NotifyQR != "" && user.NotifyQR == "" {
+		user.NotifyQR = bank.NotifyQR
 	}
 }
