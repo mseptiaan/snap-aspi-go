@@ -49,15 +49,15 @@ func demonstrateBCAIntegration() {
 
 	// BCA Virtual Account creation
 	vaPayload := &types.CreateVAPayload{
-		PartnerServiceId:   "BCA001",
-		CustomerNo:         "BCA_CUSTOMER_001",
-		VirtualAccountNo:   "8808001234567890",
-		VirtualAccountName: "BCA Customer Name",
+		PartnerServiceId:    "BCA001",
+		CustomerNo:          "BCA_CUSTOMER_001",
+		VirtualAccountNo:    "8808001234567890",
+		VirtualAccountName:  "BCA Customer Name",
 		VirtualAccountEmail: "customer@bca.co.id",
 		VirtualAccountPhone: "081234567890",
-		TrxId:              "BCA_TRX_001",
-		TotalAmount:        types.NewAmount(500000, "IDR"),
-		ExpiredDate:        "2024-12-31T23:59:59+07:00",
+		TrxId:               "BCA_TRX_001",
+		TotalAmount:         types.NewAmount(500000, "IDR"),
+		ExpiredDate:         "2024-12-31T23:59:59+07:00",
 		AdditionalInfo: &types.AdditionalInfo{
 			DeviceId: "BCA_DEVICE_001",
 			Channel:  "BCA_INTERNET_BANKING",
@@ -130,7 +130,7 @@ func demonstrateBNIIntegration() {
 		PartnerReferenceNo: "BNI_QR_001",
 		MerchantId:         "BNI_MERCHANT_001",
 		SubMerchantId:      "BNI_SUB_001",
-		ExternalStoreId:    "BNI_STORE_001",
+		StoreId:            "BNI_STORE_001",
 		Amount:             types.NewAmount(100000, "IDR"),
 		MerchantName:       "BNI Test Merchant",
 		MerchantCity:       "Jakarta",
@@ -232,10 +232,10 @@ func demonstrateMultiBankSupport() {
 	// Example: Route transaction to specific bank based on account number
 	accountNumber := "8808001234567890"
 	selectedBank := routeToBank(accountNumber)
-	
+
 	if client, exists := clients[selectedBank]; exists {
 		fmt.Printf("Routing transaction to %s bank\n", selectedBank)
-		
+
 		// Process transaction with selected bank
 		vaPayload := &types.CreateVAPayload{
 			PartnerServiceId:   selectedBank + "001",
